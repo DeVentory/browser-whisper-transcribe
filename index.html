@@ -80,6 +80,7 @@ progress{width:100%;height:8px;accent-color:var(--pri)}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:260px;text-align:center;color:var(--muted);border-radius:var(--r-md);background:var(--surface2);padding:24px}
 .empty .big{font-size:40px}
 .stat{font-size:13px;color:var(--muted)}
+.warnline{background:var(--warn-c);color:var(--on-warn);padding:10px 12px;border-radius:var(--r-sm);line-height:1.6}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .info .tabs{align-self:flex-start}
 .panel{display:flex;flex-direction:column;gap:10px}
@@ -146,6 +147,7 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
       <div id="out" role="tabpanel"></div>
       <div class="actions"><button class="pri" id="save">💾 저장</button><button id="copy">📋 복사</button></div>
       <div class="stat" id="stat"></div>
+      <div class="stat warnline" id="warn" hidden></div>
     </div>
   </section>
 </div>
@@ -272,20 +274,45 @@ function ensureWorker(){
   }
   return worker;
 }
-function send(msg,transfer){
+function send(msg,transfer,opt){
+  opt=opt||{};
   return new Promise((res,rej)=>{
-    const id=++seq, w=ensureWorker(); msg.id=id;
-    const h=e=>{const m=e.data; if(m.id!==id)return;
+    const id=++seq, w=ensureWorker(); msg.id=id; let timer=null;
+    const arm=()=>{if(!opt.timeoutMs)return;clearTimeout(timer);timer=setTimeout(()=>{done();if(worker===w){w.terminate();worker=null;}rej(new Error('__stall__'));},opt.timeoutMs);};
+    const h=e=>{const m=e.data; if(m.id!==id)return; arm();
       if(m.type==='progress'){const p=m.p; if(p.status==='progress'&&p.total){$('bar').hidden=false;$('bar').value=p.progress;log('모델 내려받는 중: '+p.file.split('/').pop()+' '+Math.round(p.loaded/1048576)+'/'+Math.round(p.total/1048576)+'MB');}}
-      else if(m.type==='chunk'){$('bar').hidden=false;$('bar').value=m.frac*100;log('전사 중… '+Math.round(m.frac*100)+'%');}
+      else if(m.type==='chunk'){if(opt.onChunk)opt.onChunk(m);$('bar').hidden=false;$('bar').value=m.frac*100;log('전사 중… '+Math.round(m.frac*100)+'%');}
       else if(m.type==='error'){done();rej(new Error(m.message));}
       else if(m.type==='ready'&&msg.type==='load'||m.type==='done'&&msg.type==='run'){done();res(m);}
     };
-    const done=()=>{w.removeEventListener('message',h);pending=null;};
+    const done=()=>{clearTimeout(timer);w.removeEventListener('message',h);pending=null;};
     pending={rej:e=>{done();rej(e);}};
     w.addEventListener('message',h);
-    try{w.postMessage(msg,transfer||[]);}catch(e){done();rej(e);}
+    try{w.postMessage(msg,transfer||[]);arm();}catch(e){done();rej(e);}
   });
+}
+
+// 전사 전체: 한 구간이 제한 시간 안에 안 끝나면(모델이 멈춤) 워커를 새로 띄우고 그 30초를 건너뛴 뒤 이어서 한다.
+// 오류가 나도 지금까지 모은 결과는 버리지 않는다.
+async function transcribe(a,model,lang,dev,sec){
+  const acc=[],skipped=[]; let next=0,stalls=0,failure=null;
+  const timeoutMs=((window.__wd?+window.__wd:(dev==='webgpu'?60:300)))*1000;
+  const t0=performance.now();
+  for(;;){
+    const copy=a.slice(Math.round(next*16000));
+    try{
+      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;}});
+      break;
+    }catch(e){
+      if(e.message!=='__stall__'){failure=e;break;}
+      stalls++; skipped.push([next,Math.min(sec,next+30)]); next+=30;
+      if(next>=sec)break;
+      if(stalls>20){failure=new Error('여러 구간에서 모델이 멈춰 중단했습니다.');break;}
+      log('⏳ '+mm(next-30)+' 근처에서 모델이 멈춰 그 30초를 건너뛰고 이어서 합니다…');
+      try{ await send({type:'load',model,device:dev}); }catch(e2){failure=e2;break;}
+    }
+  }
+  return {chunks:acc,skipped,failure,ms:performance.now()-t0};
 }
 
 const MAX_BYTES=2*1024*1024*1024;
@@ -302,6 +329,14 @@ async function decode(file){
   if(C>1)for(let i=0;i<n;i++)mono[i]/=C;
   return mono;
 }
+const mm=sec=>sec>=60?Math.floor(sec/60)+'분 '+Math.round(sec%60)+'초':Math.round(sec)+'초';
+async function metaDuration(f){
+  return new Promise(res=>{
+    const el=document.createElement('audio');el.preload='metadata';const u=URL.createObjectURL(f);
+    const end=v=>{URL.revokeObjectURL(u);res(v)};
+    el.onloadedmetadata=()=>end(isFinite(el.duration)?el.duration:null);el.onerror=()=>end(null);setTimeout(()=>end(null),3000);el.src=u;
+  });
+}
 async function setFile(f){
   if(!f||busy)return;
   fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; $('fname').textContent=f.name+' 디코딩 중…';
@@ -312,7 +347,10 @@ async function setFile(f){
     if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
     if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 전사하면 없는 문장이 나올 수 있어 막았습니다.';return;}
     audio=a; $('go').disabled=false;
-    $('fname').textContent='✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
+    const md=await metaDuration(f);
+    const cut=md&&md-sec>30&&sec<md*0.95;
+    window.__decoded={sec,meta:md};
+    $('fname').textContent=(cut?'⚠️ 파일 길이는 '+mm(md)+'인데 소리는 '+mm(sec)+'까지만 읽혔습니다. 뒷부분은 전사되지 않습니다. 다른 형식(mp3·wav)으로 변환해 올려 보세요. · ':'')+'✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
     window.__audioReady=true;
   }catch(e){ $('fname').textContent=e.message; }
 }
@@ -327,8 +365,18 @@ $('drop').addEventListener('drop',e=>{setFile(e.dataTransfer.files[0]);});
 
 const ts=(s,sep)=>{s=Math.max(0,s||0);let h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=Math.round((s%60)*1000)/1000;if(x>=60){x-=60;m++;}if(m>=60){m-=60;h++;}return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+x.toFixed(3).padStart(6,'0').replace('.',sep)};
 function fmt(chunks){
-  const segs=chunks.map(c=>({s:c.timestamp[0],e:Math.max(c.timestamp[1]??c.timestamp[0]+2,c.timestamp[0]),t:c.text.trim()})).filter(c=>c.t);
-  return { segs,
+  let segs=chunks.map(c=>({s:c.timestamp[0],e:Math.max(c.timestamp[1]??c.timestamp[0]+2,c.timestamp[0]),t:c.text.trim()})).filter(c=>c.t);
+  // 같은 문장이 4번 이상 연속되면 환각(무음·잡음 구간에서 흔함)으로 보고 뺀다
+  const norm=t=>t.replace(/[\s.,?!~…]/g,'');
+  const kept=[];let removed=0,runs=0;
+  for(let i=0;i<segs.length;){
+    let j=i;while(j+1<segs.length&&norm(segs[j+1].t)===norm(segs[i].t))j++;
+    const n=j-i+1;
+    if(n>=4&&norm(segs[i].t).length>=3){removed+=n;runs++;}else for(let k=i;k<=j;k++)kept.push(segs[k]);
+    i=j+1;
+  }
+  segs=kept;
+  return { segs,removed,runs,
     txt:segs.map(c=>c.t).join('\n'),
     srt:segs.map((c,i)=>(i+1)+'\n'+ts(c.s,',')+' --> '+ts(c.e,',')+'\n'+c.t+'\n').join('\n'),
     vtt:'WEBVTT\n\n'+segs.map(c=>ts(c.s,'.')+' --> '+ts(c.e,'.')+'\n'+c.t+'\n').join('\n'),
@@ -379,15 +427,24 @@ $('go').onclick=async()=>{
       r=await send({type:'load',model,device:dev});
     }
     $('bar').hidden=true; setStep(2); log('모델 준비 '+(r.ms/1000).toFixed(1)+'초. 전사 중…');
-    const copy=a.slice();
-    const d=await send({type:'run',audio:copy,language:lang},[copy.buffer]);
-    const chunks=d.out.chunks&&d.out.chunks.length?d.out.chunks:[{text:d.out.text||'',timestamp:[0,sec]}]; const f=fmt(chunks);
+    const d=await transcribe(a,model,lang,dev,sec);
+    const chunks=d.chunks.length?d.chunks:[{text:'',timestamp:[0,sec]}]; const f=fmt(chunks);
     results=f; if(!f.txt.trim()){results={segs:[],txt:'인식된 말이 없습니다.',srt:'',vtt:'WEBVTT\n',json:'[]'};}
+    const w=[];
+    if(d.skipped.length)w.push('⏳ 모델이 멈춰서 건너뛴 구간 '+d.skipped.length+'곳: '+d.skipped.slice(0,6).map(x=>mm(x[0])+'~'+mm(x[1])).join(', ')+(d.skipped.length>6?' 외 '+(d.skipped.length-6)+'곳':'')+'. 해당 부분의 말은 결과에 없습니다.');
+    if(d.failure)w.push('⚠️ 오류로 '+mm(d.chunks.length?d.chunks[d.chunks.length-1].timestamp[1]:0)+' 부근에서 중단되어 지금까지의 결과만 보여 드립니다. ('+d.failure.message+')');
+    if(f.removed)w.push('🧹 같은 문장이 4번 이상 반복되는 구간 '+f.runs+'곳('+f.removed+'줄)을 환각으로 보고 결과에서 뺐습니다. 무음이나 잡음 구간에서 모델이 없는 문장을 만들어 낸 것입니다.');
+    const segs=f.segs; const last=segs.length?segs[segs.length-1].e:0;
+    if(sec-last>60)w.push('⚠️ '+mm(last)+' 이후부터 끝('+mm(sec)+')까지는 인식된 말이 없습니다. 소리가 작거나 무음·음악이거나 모델이 놓쳤을 수 있습니다. 해당 구간을 따로 잘라 다시 시도해 보세요.');
+    let prev=0,miss=[];
+    for(const sg of segs){if(sg.s-prev>180)miss.push([prev,sg.s]);prev=Math.max(prev,sg.e);}
+    if(miss.length)w.push('ℹ️ 3분 넘게 말이 인식되지 않은 구간: '+miss.slice(0,5).map(m=>mm(m[0])+'~'+mm(m[1])).join(', ')+(miss.length>5?' 외 '+(miss.length-5)+'곳':''));
+    $('warn').hidden=!w.length; $('warn').textContent=w.join('\n'); $('warn').style.whiteSpace='pre-line';
     $('empty').hidden=true; $('res').hidden=false; showTab('txt');
     if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
     const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+sec.toFixed(1)+'초 · 속도 '+(sec/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
-    lastStat=stat; $('stat').textContent='⏱️ '+stat; log(stat); setStep(3);
-    window.__result={text:f.txt,stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
+    lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last); log(stat); setStep(3);
+    window.__result={text:f.txt,segs:f.segs,warn:w.join(' | '),stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
   }catch(e){ log('오류: '+e.message,true); setStep(0); window.__result={error:e.message}; }
   $('bar').hidden=true;
   setBusy(false);
@@ -397,7 +454,7 @@ $('go').onclick=async()=>{
 const q=new URLSearchParams(location.search), auto=q.get('auto');
 if(['localhost','127.0.0.1'].includes(location.hostname)&&auto&&/^test\/[\w.\-]+$/.test(auto)){
   window.__autoStart=()=>{
-    window.__autoStart=null;
+    window.__autoStart=null; if(q.get('wd'))window.__wd=q.get('wd');
     if(['turbo','small','base'].includes(q.get('model')))setModel(q.get('model'));
     fetch(auto).then(r=>r.blob()).then(b=>setFile(new File([b],auto.split('/').pop()))).then(()=>{if(!$('go').disabled)$('go').click();else window.__result={error:$('fname').textContent};});
   };
