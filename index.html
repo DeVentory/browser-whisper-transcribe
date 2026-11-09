@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>웹 받아쓰기</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#1b2430;--muted:#5d6b7a;--card:#fff;--line:#d9dfe6;--acc:#2358d6;--accfg:#fff;--ok:#13795b;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#12171d;--fg:#e6ebf0;--muted:#97a4b2;--card:#1a212a;--line:#2b3541;--acc:#7aa2ff;--accfg:#0d1626;--ok:#4cc9a0;--bad:#ff8a80;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;padding:24px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:22px;margin:0}
+p,.hint{margin:0;color:var(--muted)}
+.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+#drop{border:2px dashed var(--line);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer}
+#drop.over{border-color:var(--acc)}
+#drop.locked{opacity:.5;cursor:default}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);flex:1 1 180px;min-width:0}
+select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-width:0}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+button{font:inherit;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+button.pri{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,#drop:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+progress{width:100%;height:8px}
+#log{font:13px/1.5 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+#result{white-space:pre-wrap;word-break:keep-all;overflow-wrap:break-word;max-height:50vh;overflow:auto}
+.warn{color:var(--bad)}
+</style></head>
+<body><main>
+<h1>웹 받아쓰기</h1>
+<p>음성·영상 파일을 브라우저 안에서 전사합니다. 파일 내용은 이 기기 밖으로 보내지 않습니다.</p>
+<p class="small">처음 접속하면 전사 코드는 jsdelivr(cdn.jsdelivr.net)에서, 모델은 Hugging Face(huggingface.co·hf.co)에서 내려받습니다. 이 서비스들에는 IP 같은 접속 정보가 보입니다. 모델은 한 번 받으면 브라우저에 저장되는 것이 일반적이지만, 이 앱에서는 재실행 시 다시 받지 않는지 확인하지 못했습니다.</p>
+
+<div class="card">
+  <div id="drop" tabindex="0" role="button">파일을 끌어다 놓거나 눌러서 선택<div class="hint" id="fname" aria-live="polite">선택된 파일 없음</div></div>
+  <input id="file" type="file" accept="audio/*,video/*" hidden>
+  <div class="row">
+    <label>모델<select id="model"></select></label>
+    <label>언어<select id="lang"><option value="korean">한국어</option><option value="english">English</option><option value="japanese">日本語</option></select></label>
+  </div>
+  <div class="hint" id="env" aria-live="polite">장치 확인 중…</div>
+  <div class="row"><button class="pri" id="go" disabled>전사 시작</button></div>
+  <progress id="bar" value="0" max="100" hidden></progress>
+  <div id="log" aria-live="polite"></div>
+</div>
+
+<div class="card" id="res" hidden>
+  <div class="row" id="dl"></div>
+  <div id="result"></div>
+</div>
+<p class="small">개인이 만든 실험용 도구입니다. 전사 결과에는 오류가 있을 수 있고, 무음 구간에서 없는 문장이 나오기도 합니다. 중요한 용도에는 직접 확인하세요.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+// 모델 용량(Hugging Face 파일 목록 기준, 2026-11-09): 앱이 받는 encoder+decoder 합
+const SIZE={webgpu:{turbo:'약 1.6GB',small:'약 0.4GB',base:'약 0.17GB'},wasm:{turbo:'약 1.1GB',small:'약 0.25GB',base:'약 0.08GB'}};
+const NAME={turbo:'large-v3-turbo · 정확도 높음',small:'small · 중간',base:'base · 빠르지만 한국어 오인식 많음'};
+let device='wasm',worker=null,audio=null,fileName='',busy=false,seq=0,pending=null;
+const log=s=>{$('log').textContent=s};
+
+async function pickDevice(){
+  try{
+    if(!navigator.gpu)return 'wasm';
+    const a=await navigator.gpu.requestAdapter();
+    // fp16 셰이더를 지원하지 않는 GPU는 turbo/small의 fp16 encoder를 못 돌린다
+    return (a&&a.features&&a.features.has('shader-f16'))?'webgpu':'wasm';
+  }catch{return 'wasm'}
+}
+function fillModels(){
+  const cur=$('model').value;
+  $('model').innerHTML='';
+  for(const k of ['turbo','small','base']){const o=document.createElement('option');o.value=k;o.textContent=NAME[k]+' ('+SIZE[device][k]+')';$('model').appendChild(o);}
+  $('model').value=cur||(device==='webgpu'?'turbo':'small');
+}
+pickDevice().then(d=>{
+  device=d; $('model').innerHTML=''; fillModels();
+  $('env').textContent=d==='webgpu'?'WebGPU 사용 가능: GPU로 처리합니다.':'이 브라우저·기기에서는 WebGPU(fp16)를 쓸 수 없어 CPU(WASM)로 처리합니다. small이나 base를 권장합니다.';
+  if(d!=='webgpu')$('env').classList.add('warn');
+  if(window.__autoStart)window.__autoStart();
+});
+fillModels();
+
+function setBusy(b){
+  busy=b;
+  for(const id of ['model','lang'])$(id).disabled=b;
+  $('go').disabled=b||!audio;
+  $('drop').classList.toggle('locked',b);
+  $('drop').setAttribute('aria-disabled',b?'true':'false');
+}
+
+function ensureWorker(){
+  if(!worker){
+    worker=new Worker('worker.js',{type:'module'});
+    worker.onerror=ev=>{ // 모듈 로드 실패(CDN 접속 불가 등)
+      const p=pending; worker=null;
+      if(p)p.rej(new Error('전사 코드를 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.'));
+      ev.preventDefault();
+    };
+  }
+  return worker;
+}
+function send(msg,transfer){
+  return new Promise((res,rej)=>{
+    const id=++seq, w=ensureWorker(); msg.id=id;
+    const h=e=>{const m=e.data; if(m.id!==id)return;
+      if(m.type==='progress'){const p=m.p; if(p.status==='progress'&&p.total){$('bar').hidden=false;$('bar').value=p.progress;log('모델 내려받는 중: '+p.file.split('/').pop()+' '+Math.round(p.loaded/1048576)+'/'+Math.round(p.total/1048576)+'MB');}}
+      else if(m.type==='chunk'){$('bar').hidden=false;$('bar').value=m.frac*100;log('전사 중… '+Math.round(m.frac*100)+'%');}
+      else if(m.type==='error'){done();rej(new Error(m.message));}
+      else if(m.type==='ready'&&msg.type==='load'||m.type==='done'&&msg.type==='run'){done();res(m);}
+    };
+    const done=()=>{w.removeEventListener('message',h);pending=null;};
+    pending={rej:e=>{done();rej(e);}};
+    w.addEventListener('message',h);
+    try{w.postMessage(msg,transfer||[]);}catch(e){done();rej(e);}
+  });
+}
+
+const MAX_BYTES=2*1024*1024*1024;
+async function decode(file){
+  if(file.size>MAX_BYTES)throw new Error('파일이 너무 큽니다(약 2GB 한도). 오디오만 추출하거나 나눠서 올려 주세요.');
+  let ab;
+  try{
+    const buf=await file.arrayBuffer();
+    const ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+    ab=await ctx.decodeAudioData(buf); ctx.close();
+  }catch{throw new Error('이 파일을 열 수 없습니다. 오디오 트랙이 없거나 손상된 파일이거나, 브라우저가 지원하지 않는 형식일 수 있습니다.');}
+  const n=ab.length, mono=new Float32Array(n), C=ab.numberOfChannels;
+  for(let c=0;c<C;c++){const d=ab.getChannelData(c);for(let i=0;i<n;i++)mono[i]+=d[i];}
+  if(C>1)for(let i=0;i<n;i++)mono[i]/=C;
+  return mono;
+}
+async function setFile(f){
+  if(!f||busy)return;
+  fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; $('fname').textContent=f.name+' 디코딩 중…';
+  try{
+    const a=await decode(f);
+    let peak=0;for(let i=0;i<a.length;i++){const v=Math.abs(a[i]);if(v>peak)peak=v;}
+    const sec=a.length/16000;
+    if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
+    if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 전사하면 없는 문장이 나올 수 있어 막았습니다.';return;}
+    audio=a; $('go').disabled=false;
+    $('fname').textContent=f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
+    window.__audioReady=true;
+  }catch(e){ $('fname').textContent=e.message; }
+}
+$('drop').onclick=()=>{if(!busy)$('file').click();};
+$('drop').onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!busy){e.preventDefault();$('file').click();}};
+$('file').onchange=e=>{setFile(e.target.files[0]);e.target.value='';};
+// 영역 밖에 놓은 파일을 브라우저가 열어 버리면 앱 상태를 잃는다
+for(const n of ['dragover','drop'])window.addEventListener(n,e=>e.preventDefault());
+['dragover','dragenter'].forEach(n=>$('drop').addEventListener(n,()=>{if(!busy)$('drop').classList.add('over')}));
+['dragleave','drop'].forEach(n=>$('drop').addEventListener(n,()=>$('drop').classList.remove('over')));
+$('drop').addEventListener('drop',e=>{setFile(e.dataTransfer.files[0]);});
+
+const ts=(s,sep)=>{s=Math.max(0,s||0);let h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=Math.round((s%60)*1000)/1000;if(x>=60){x-=60;m++;}if(m>=60){m-=60;h++;}return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+x.toFixed(3).padStart(6,'0').replace('.',sep)};
+function fmt(chunks){
+  const segs=chunks.map(c=>({s:c.timestamp[0],e:Math.max(c.timestamp[1]??c.timestamp[0]+2,c.timestamp[0]),t:c.text.trim()})).filter(c=>c.t);
+  return {
+    txt:segs.map(c=>c.t).join('\n'),
+    srt:segs.map((c,i)=>(i+1)+'\n'+ts(c.s,',')+' --> '+ts(c.e,',')+'\n'+c.t+'\n').join('\n'),
+    vtt:'WEBVTT\n\n'+segs.map(c=>ts(c.s,'.')+' --> '+ts(c.e,'.')+'\n'+c.t+'\n').join('\n'),
+    json:JSON.stringify(segs,null,2)};
+}
+function offer(name,ext,text){const b=document.createElement('button');b.textContent=ext.toUpperCase()+' 저장';
+  b.onclick=()=>{const u=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download=name+'.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);};$('dl').appendChild(b);}
+
+$('go').onclick=async()=>{
+  if(busy||!audio)return;
+  // 실행 시작 시점의 값을 고정한다(도중에 바뀌어도 이 실행에는 영향 없음)
+  const a=audio, name=fileName||'전사', model=$('model').value, lang=$('lang').value, sec=a.length/16000;
+  let dev=device;
+  setBusy(true);$('res').hidden=true;$('dl').innerHTML='';
+  try{
+    log('모델 준비 중…'); let r;
+    try{ r=await send({type:'load',model,device:dev}); }
+    catch(e){
+      if(dev!=='webgpu')throw e;
+      log('GPU로 모델을 준비하지 못해 CPU로 다시 시도합니다… ('+e.message+')');
+      if(worker){worker.terminate();worker=null;} dev='wasm';
+      r=await send({type:'load',model,device:dev});
+    }
+    $('bar').hidden=true; log('모델 준비 '+(r.ms/1000).toFixed(1)+'초. 전사 중…');
+    const copy=a.slice();
+    const d=await send({type:'run',audio:copy,language:lang},[copy.buffer]);
+    const chunks=d.out.chunks&&d.out.chunks.length?d.out.chunks:[{text:d.out.text||'',timestamp:[0,sec]}]; const f=fmt(chunks);
+    if(!f.txt.trim()){ $('result').textContent='인식된 말이 없습니다.'; }
+    else { $('result').textContent=f.txt; for(const k of ['txt','srt','vtt','json'])offer(name,k,f[k]); }
+    $('res').hidden=false;
+    const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+sec.toFixed(1)+'초 · 속도 '+(sec/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
+    log(stat); window.__result={text:f.txt,stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
+  }catch(e){ log('오류: '+e.message); window.__result={error:e.message}; }
+  $('bar').hidden=true;
+  setBusy(false);
+};
+
+// 시험용: localhost에서만, test/ 아래 같은 출처 파일만 자동 실행한다(?auto=test/ref.wav&model=base)
+const q=new URLSearchParams(location.search), auto=q.get('auto');
+if(['localhost','127.0.0.1'].includes(location.hostname)&&auto&&/^test\/[\w.\-]+$/.test(auto)){
+  window.__autoStart=()=>{
+    window.__autoStart=null;
+    if(['turbo','small','base'].includes(q.get('model')))$('model').value=q.get('model');
+    fetch(auto).then(r=>r.blob()).then(b=>setFile(new File([b],auto.split('/').pop()))).then(()=>{if(!$('go').disabled)$('go').click();else window.__result={error:$('fname').textContent};});
+  };
+}
+</script></body></html>
