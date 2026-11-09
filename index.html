@@ -316,8 +316,113 @@ async function transcribe(a,model,lang,dev,sec){
 }
 
 const MAX_BYTES=2*1024*1024*1024;
-async function decode(file){
+
+// ───────── MP4 계열(mp4·m4a·mov) 직접 읽기 ─────────
+// Safari(WebKit)의 decodeAudioData는 MP4 계열을 읽다가 중간(예: 7분)에서 오류 없이 멈춘다.
+// 같은 소리를 ADTS AAC·mp3·wav로 주면 끝까지 읽히므로, MP4에서 AAC 조각만 꺼내 ADTS로 감싸 나눠서 디코딩한다.
+const u32=(d,o)=>d.getUint32(o), u64=(d,o)=>Number(d.getBigUint64(o));
+const fourcc=(d,o)=>String.fromCharCode(d.getUint8(o),d.getUint8(o+1),d.getUint8(o+2),d.getUint8(o+3));
+function boxes(d,start,end){ // 메모리 안 DataView에서 하위 상자 목록
+  const out=[];let p=start;
+  while(p+8<=end){let size=u32(d,p),hs=8;const type=fourcc(d,p+4);
+    if(size===1){size=u64(d,p+8);hs=16;}else if(size===0)size=end-p;
+    if(size<hs||p+size>end)break; out.push({type,s:p+hs,e:p+size}); p+=size;}
+  return out;
+}
+const kids=(d,b,type)=>boxes(d,b.s,b.e).filter(x=>x.type===type);
+const kid=(d,b,type)=>kids(d,b,type)[0];
+async function probeMp4(file){
+  try{
+    // 최상위 상자를 훑어 moov 위치를 찾는다(mdat은 건너뜀)
+    let pos=0,moov=null,sawFtyp=false;
+    while(pos+8<=file.size){
+      const h=new DataView(await file.slice(pos,pos+16).arrayBuffer());
+      let size=u32(h,0),hs=8;const type=fourcc(h,4);
+      if(pos===0){ if(type!=='ftyp'&&type!=='moov'&&type!=='mdat'&&type!=='free'&&type!=='wide')return null; }
+      if(type==='ftyp')sawFtyp=true;
+      if(size===1){size=u64(h,8);hs=16;}else if(size===0)size=file.size-pos;
+      if(size<hs)return null;
+      if(type==='moov'){moov={s:pos+hs,e:pos+size};break;}
+      pos+=size;
+    }
+    if(!moov||moov.e-moov.s>200*1048576)return null;
+    const buf=await file.slice(moov.s,moov.e).arrayBuffer(); const d=new DataView(buf);
+    const root={s:0,e:buf.byteLength};
+    const mvhd=kid(d,root,'mvhd'); let dur=0;
+    if(mvhd){const v=d.getUint8(mvhd.s);const ts=v===1?u32(d,mvhd.s+20):u32(d,mvhd.s+12);dur=(v===1?u64(d,mvhd.s+24):u32(d,mvhd.s+16))/ts;}
+    for(const trak of kids(d,root,'trak')){
+      const mdia=kid(d,trak,'mdia'); if(!mdia)continue;
+      const hdlr=kid(d,mdia,'hdlr'); if(!hdlr||fourcc(d,hdlr.s+8)!=='soun')continue;
+      const stbl=kid(d,kid(d,mdia,'minf'),'stbl'); if(!stbl)continue;
+      const stsd=kid(d,stbl,'stsd'); const ent=boxes(d,stsd.s+8,stsd.e)[0];
+      if(!ent||ent.type!=='mp4a')return {dur,aac:null};
+      const esds=boxes(d,ent.s+28,ent.e).find(x=>x.type==='esds'); if(!esds)return {dur,aac:null};
+      // esds → ES_Descriptor(0x03) → DecoderConfig(0x04) → DecoderSpecificInfo(0x05) = AudioSpecificConfig
+      let q=esds.s+4;const readLen=()=>{let n=0,c;do{c=d.getUint8(q++);n=(n<<7)|(c&0x7f);}while(c&0x80);return n;};
+      let asc=null;
+      while(q<esds.e){const tag=d.getUint8(q++);const len=readLen();
+        if(tag===3){q+=2;const fl=d.getUint8(q++);if(fl&0x80)q+=2;if(fl&0x40){q+=d.getUint8(q)+1;}if(fl&0x20)q+=2;}
+        else if(tag===4){q+=13;}
+        else if(tag===5){asc=new Uint8Array(buf,q,len);break;}
+        else q+=len;}
+      if(!asc)return {dur,aac:null};
+      let bits=0,bl=0,ai=0;const rd=n=>{while(bl<n){bits=(bits<<8)|asc[ai++];bl+=8;}const v=(bits>>(bl-n))&((1<<n)-1);bl-=n;bits&=(1<<bl)-1;return v;};
+      let aot=rd(5);if(aot===31)aot=32+rd(6);let fi=rd(4);let sr;if(fi===15){sr=rd(24);fi=-1;}const ch=rd(4);
+      if(aot<1||aot>4||fi<0||ch<1||ch>7)return {dur,aac:null}; // HE-AAC 등은 이 방식으로 감싸지 못함
+      const stsz=kid(d,stbl,'stsz'),stsc=kid(d,stbl,'stsc'),stco=kid(d,stbl,'stco'),co64=kid(d,stbl,'co64');
+      if(!stsz||!stsc||(!stco&&!co64))return {dur,aac:null};
+      const fixed=u32(d,stsz.s+4),n=u32(d,stsz.s+8); if(!n)return {dur,aac:null};
+      const sizes=new Uint32Array(n);for(let i=0;i<n;i++)sizes[i]=fixed||u32(d,stsz.s+12+i*4);
+      const sn=u32(d,stsc.s+4),sc=[];for(let i=0;i<sn;i++)sc.push([u32(d,stsc.s+8+i*12),u32(d,stsc.s+12+i*12)]);
+      const cb=co64||stco,cn=u32(d,cb.s+4),offs=new Array(cn);
+      for(let i=0;i<cn;i++)offs[i]=co64?u64(d,cb.s+8+i*8):u32(d,cb.s+8+i*4);
+      // 청크별 [파일 오프셋, 첫 샘플 번호, 샘플 수]
+      const chunks=[];let si=0,k=0;
+      for(let c=0;c<cn;c++){while(k+1<sc.length&&c+1>=sc[k+1][0])k++;chunks.push([offs[c],si,sc[k][1]]);si+=sc[k][1];}
+      if(si!==n)return {dur,aac:null};
+      return {dur,aac:{aot,fi,ch,sizes,chunks,rate:[96000,88200,64000,48000,44100,32000,24000,22050,16000,12000,11025,8000,7350][fi]||0}};
+    }
+    return {dur,aac:null};
+  }catch(e){ return null; }
+}
+function adts(aac,len){const f=len+7,h=new Uint8Array(7);
+  h[0]=0xFF;h[1]=0xF1;h[2]=((aac.aot-1)<<6)|(aac.fi<<2)|((aac.ch>>2)&1);
+  h[3]=((aac.ch&3)<<6)|((f>>11)&3);h[4]=(f>>3)&0xFF;h[5]=((f&7)<<5)|0x1F;h[6]=0xFC;return h;}
+async function decodeMp4Demux(file,info,progress){
+  const aac=info.aac, ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
+  const framesPerSeg=Math.max(1,Math.round(300*aac.rate/1024)); // 약 5분씩
+  const cap=Math.ceil((info.dur+10)*16000);
+  let out=new Float32Array(cap),w=0,ci=0;
+  try{
+    while(ci<aac.chunks.length){
+      const parts=[];let frames=0,bytes=0;
+      while(ci<aac.chunks.length&&frames<framesPerSeg){
+        const [off,s0,cnt]=aac.chunks[ci++];let total=0;for(let i=0;i<cnt;i++)total+=aac.sizes[s0+i];
+        const raw=new Uint8Array(await file.slice(off,off+total).arrayBuffer());
+        let p=0;for(let i=0;i<cnt;i++){const sz=aac.sizes[s0+i];parts.push(adts(aac,sz),raw.subarray(p,p+sz));p+=sz;bytes+=sz+7;}
+        frames+=cnt;
+      }
+      const seg=new Uint8Array(bytes);let q=0;for(const x of parts){seg.set(x,q);q+=x.length;}
+      const ab=await ctx.decodeAudioData(seg.buffer);
+      const n=ab.length,C=ab.numberOfChannels;
+      if(w+n>out.length){const g=new Float32Array(Math.ceil((w+n)*1.05));g.set(out.subarray(0,w));out=g;}
+      for(let c=0;c<C;c++){const dd=ab.getChannelData(c);for(let i=0;i<n;i++)out[w+i]+=dd[i];}
+      if(C>1)for(let i=0;i<n;i++)out[w+i]/=C;
+      w+=n; if(progress)progress(ci/aac.chunks.length);
+    }
+  } finally { ctx.close(); }
+  return out.slice(0,w);
+}
+
+const isWebKit=/AppleWebKit/.test(navigator.userAgent)&&!/Chrome\/|Chromium\//.test(navigator.userAgent);
+async function decode(file,progress){
   if(file.size>MAX_BYTES)throw new Error('파일이 너무 큽니다(약 2GB 한도). 오디오만 추출하거나 나눠서 올려 주세요.');
+  const info=await probeMp4(file); window.__mp4=info?{dur:info.dur,aac:!!info.aac}:null;
+  // Safari 계열은 MP4를 통째로 decodeAudioData에 넣으면 중간에 잘리므로 처음부터 직접 읽는다
+  if(info&&info.aac&&isWebKit){
+    try{ const a=await decodeMp4Demux(file,info,progress); window.__decodeVia='demux'; return a; }
+    catch(e){ console.warn('MP4 직접 읽기 실패, 기본 방식으로 시도합니다:',e); }
+  }
   let ab;
   try{
     const buf=await file.arrayBuffer();
@@ -327,8 +432,14 @@ async function decode(file){
   const n=ab.length, mono=new Float32Array(n), C=ab.numberOfChannels;
   for(let c=0;c<C;c++){const d=ab.getChannelData(c);for(let i=0;i<n;i++)mono[i]+=d[i];}
   if(C>1)for(let i=0;i<n;i++)mono[i]/=C;
+  // 기본 방식이 중간에 잘렸는데 MP4 직접 읽기가 가능하면 그쪽으로 다시 읽는다
+  if(info&&info.aac&&info.dur-n/16000>30&&n/16000<info.dur*0.95){
+    try{ const a=await decodeMp4Demux(file,info,progress); window.__decodeVia='demux-fallback'; return a; }catch(e){ console.warn('MP4 직접 읽기 실패:',e); }
+  }
+  window.__decodeVia='native';
   return mono;
 }
+
 const mm=sec=>sec>=60?Math.floor(sec/60)+'분 '+Math.round(sec%60)+'초':Math.round(sec)+'초';
 async function metaDuration(f){
   return new Promise(res=>{
@@ -341,13 +452,13 @@ async function setFile(f){
   if(!f||busy)return;
   fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; $('fname').textContent=f.name+' 디코딩 중…';
   try{
-    const a=await decode(f);
+    const a=await decode(f,r=>{$('fname').textContent=f.name+' 디코딩 중… '+Math.round(r*100)+'%';});
     let peak=0;for(let i=0;i<a.length;i++){const v=Math.abs(a[i]);if(v>peak)peak=v;}
     const sec=a.length/16000;
     if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
     if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 전사하면 없는 문장이 나올 수 있어 막았습니다.';return;}
     audio=a; $('go').disabled=false;
-    const md=await metaDuration(f);
+    const md=(window.__mp4&&window.__mp4.dur)||await metaDuration(f);
     const cut=md&&md-sec>30&&sec<md*0.95;
     window.__decoded={sec,meta:md};
     $('fname').textContent=(cut?'⚠️ 파일 길이는 '+mm(md)+'인데 소리는 '+mm(sec)+'까지만 읽혔습니다. 뒷부분은 전사되지 않습니다. 다른 형식(mp3·wav)으로 변환해 올려 보세요. · ':'')+'✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
