@@ -97,11 +97,21 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
   box-shadow:0 28px 70px -36px color-mix(in srgb,var(--pri) 55%,transparent);display:flex;flex-direction:column;gap:20px;align-items:flex-start;transition:outline-color .15s}
 .hero.over{outline:3px solid var(--pri);outline-offset:-3px}
 #wave{position:absolute;left:0;right:0;bottom:0;width:100%;height:150px;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(to top,#000 45%,transparent);mask-image:linear-gradient(to top,#000 45%,transparent)}
-.brandrow{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;letter-spacing:-.01em;width:100%}
+.brandrow .bl{display:flex;align-items:center;gap:10px}
+.livebadge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:var(--ok-c);color:var(--ok);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+.livebadge i{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s ease-in-out infinite}
+.livebadge b{font-variant-numeric:tabular-nums}
+.livebadge.bad{background:var(--bad-c);color:var(--bad)}
+@media (prefers-reduced-motion:reduce){.livebadge i{animation:none}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.linkbtn{background:none;border-radius:8px;padding:10px 6px;font-weight:700;color:var(--pri);text-decoration:underline;text-underline-offset:4px}
+.linkbtn:hover{background:var(--pri-c)}
 .brandrow .logo{width:38px;height:38px;border-radius:13px;font-size:20px}
-.hero h1{font-size:clamp(34px,7.2vw,66px);line-height:1.1;letter-spacing:-.04em;font-weight:800;margin:0;word-break:keep-all;max-width:18ch}
+.hero h1{font-size:clamp(34px,7.2vw,66px);line-height:1.1;letter-spacing:-.04em;font-weight:800;margin:0;word-break:keep-all;max-width:14ch}
 .grad{white-space:nowrap;background:linear-gradient(100deg,var(--pri),var(--ok));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero .tag{font-size:clamp(16px,2.2vw,19px);max-width:46ch;word-break:keep-all}
+.hero .tag{font-size:clamp(16px,2.2vw,19px);max-width:48ch;word-break:keep-all;color:var(--on)}
+.hero .tag b{color:var(--pri)}
 .ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .cta{padding:17px 30px;font-size:17px;box-shadow:0 12px 30px -12px color-mix(in srgb,var(--pri) 80%,transparent);transition:transform .15s,box-shadow .15s}
 .cta:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px color-mix(in srgb,var(--pri) 85%,transparent)}
@@ -121,25 +131,25 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 .reqlog .t{color:var(--muted)}
 .reqlog li.send{color:var(--bad);font-weight:700}
 .reqlog .none{color:var(--muted);display:block}
-@media (max-width:560px){.tiles{grid-template-columns:minmax(0,1fr)}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
+@media (max-width:560px){.linkbtn{width:100%;text-align:center}.tiles{grid-template-columns:minmax(0,1fr)}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><div class="wrap">
 
 <section class="hero" id="hero" aria-label="소개">
   <canvas id="wave" aria-hidden="true"></canvas>
-  <div class="brandrow"><div class="logo" aria-hidden="true">🎙️</div><span>웹 받아쓰기</span></div>
-  <h1>파일은 내 기기를 <span class="grad">떠나지 않습니다.</span></h1>
-  <p class="tag">음성·영상 파일을 끌어다 놓으면, 브라우저가 직접 받아 적습니다. 가입도 설치도 없습니다.</p>
+  <div class="brandrow"><span class="bl"><span class="logo" aria-hidden="true">🎙️</span><span>웹 받아쓰기</span></span>
+    <a class="livebadge" id="liveBadge" href="#proof" aria-label="업로드 요청 수, 증거 보기"><i aria-hidden="true"></i><span>업로드 <b id="liveUp">0</b>건</span></a></div>
+  <h1>녹음 파일,<br><span class="grad">업로드 없이</span> 글로.</h1>
+  <p class="tag">서버로 보내지 않는데 어떻게? 브라우저 안에서 Whisper가 직접 돌아갑니다. <b>아래에서 업로드 0건을 직접 확인하세요.</b></p>
   <div class="ctas">
-    <button class="pri cta" id="heroPick">📂 파일 선택하기</button>
-    <button class="ghost cta" id="heroProof" style="box-shadow:none">🔍 증거 먼저 보기</button>
+    <button class="pri cta" id="heroPick">📂 파일 열고 받아 적기</button>
+    <button class="linkbtn" id="heroProof">업로드 0건 확인하기 ↓</button>
   </div>
-  <p class="heronote">mp3 · m4a · mp4 · mov · wav, 약 2GB까지 · 파일을 이 영역에 끌어다 놓아도 됩니다. 한국어 강의 33분 1개에서 맥용 앱과 99.5% 일치했습니다(다른 음성은 확인하지 못함).</p>
+  <p class="heronote" id="ctaNote">가입 없음 · 설치 없음 · 파일을 이 영역에 끌어다 놓아도 됩니다.</p>
   <div class="chips">
-    <span class="chip ok">🔒 파일 내용은 밖으로 보내지 않음</span>
+    <span class="chip ok">🔒 파일은 밖으로 보내지 않음</span>
     <span class="chip" id="devchip">⚙️ 장치 확인 중…</span>
-    <span class="chip">🧠 Whisper large-v3-turbo</span>
     <span class="chip">📝 TXT · SRT · VTT · JSON</span>
   </div>
 </section>
@@ -200,6 +210,7 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
   </div>
   <div class="tblwrap"><table><thead><tr><th>접속한 곳</th><th>무엇을 받나</th><th>요청</th><th>받은 크기</th></tr></thead><tbody id="hostTbl"></tbody></table></div>
   <ul class="reqlog" id="reqLog" aria-label="최근 요청"></ul>
+  <p class="hint">🧪 정확도: 한국어 강의 33분 1개에서 맥용 mlx-whisper 결과와 글자 기준 99.5% 일치했습니다. 다른 음성의 정확도는 확인하지 못했습니다.</p>
   <p class="hint">⚠️ 이 숫자는 페이지 코드가 스스로 센 값이라, 코드가 바뀌면 믿을 수 없습니다. 확실히 보려면 개발자 도구의 네트워크 탭을 직접 여세요(Safari: 개발자용 메뉴 → 웹 검사기). 데이터를 보낸 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 기록해 준 것만 나오므로, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
 </section>
 
@@ -291,11 +302,18 @@ function renderModels(sel){
   setModel(sel);
 }
 renderModels('small');
+const MODEL_NM={turbo:'large-v3-turbo',small:'small',base:'base'};
+function updCtaNote(){
+  const k=modelValue();
+  $('ctaNote').textContent='가입 없음 · 설치 없음 · 처음엔 모델('+MODEL_NM[k]+' '+SIZE[device][k]+')을 내려받아 시간이 걸립니다. 파일을 이 영역에 끌어다 놓아도 됩니다.';
+}
+$('models').addEventListener('change',updCtaNote);
 // 휴대폰·태블릿(터치 기기)은 탭 메모리 한도가 낮아 turbo(약 1.6GB)가 강제 종료될 수 있다(추정, 실기기 미확인).
 // 그래서 기본 선택을 small로 두고, turbo는 직접 고를 수 있게 남긴다.
 const mobile=/iPhone|iPad|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&matchMedia('(pointer:coarse)').matches);
 pickDevice().then(d=>{
   device=d; renderModels(d==='webgpu'&&!mobile?'turbo':'small');
+  updCtaNote();
   const ok=d==='webgpu';
   $('devchip').textContent=ok?'⚡ GPU(WebGPU)로 처리':'🐢 CPU(WASM)로 처리';
   $('devchip').className='chip '+(ok?'ok':'bad');
@@ -327,6 +345,7 @@ function netRender(){
   net.raf=0;
   $('nReq').textContent=net.n;$('nHost').textContent=net.hosts.size;$('nUp').textContent=net.sends;
   $('tUp').className='tile '+(net.sends?'bad':'ok');
+  $('liveUp').textContent=net.sends;$('liveBadge').classList.toggle('bad',net.sends>0);
   const tb=$('hostTbl');tb.textContent='';
   for(const [host,h] of [...net.hosts].sort((a,b)=>b[1].n-a[1].n)){
     const tr=document.createElement('tr');
