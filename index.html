@@ -112,7 +112,7 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
 .linkbtn{background:none;border-radius:8px;padding:10px 6px;font-weight:700;color:var(--pri);text-decoration:underline;text-underline-offset:4px}
 .linkbtn:hover{background:var(--pri-c)}
-.brandrow .logo{width:38px;height:38px;border-radius:13px;font-size:20px}
+.brandrow .logo{width:38px;height:38px;flex:none}
 .hero h1{font-size:clamp(34px,7.2vw,66px);line-height:1.1;letter-spacing:-.04em;font-weight:800;margin:0;word-break:keep-all;max-width:14ch}
 .grad{white-space:nowrap;background:linear-gradient(100deg,var(--pri),var(--ok));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero .tag{font-size:clamp(16px,2.2vw,19px);max-width:48ch;word-break:keep-all;color:var(--on)}
@@ -143,7 +143,7 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 
 <section class="hero" id="hero" aria-label="소개">
   <canvas id="wave" aria-hidden="true"></canvas>
-  <div class="brandrow"><span class="bl"><span class="logo" aria-hidden="true">🎙️</span><span>웹 받아쓰기</span></span>
+  <div class="brandrow"><span class="bl"><svg class="logo" aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#3F51B5"/><rect x="6.8" y="23.0" width="6.4" height="18" rx="3.2" fill="#fff"/><rect x="17.8" y="16.0" width="6.4" height="32" rx="3.2" fill="#fff"/><rect x="28.8" y="10.0" width="6.4" height="44" rx="3.2" fill="#fff"/><rect x="39.8" y="18.0" width="6.4" height="28" rx="3.2" fill="#fff"/><rect x="50.8" y="25.0" width="6.4" height="14" rx="3.2" fill="#fff"/></svg><span>웹 받아쓰기</span></span>
     <a class="livebadge" id="liveBadge" href="#proof" aria-label="업로드 요청 수, 증거 보기"><i aria-hidden="true"></i><span>업로드 <b id="liveUp">0</b>건</span></a></div>
   <h1>녹음 파일,<br><span class="grad">업로드 없이</span> 글로.</h1>
   <p class="tag">서버로 보내지 않는데 어떻게? 브라우저 안에서 Whisper가 직접 돌아갑니다. <b>아래에서 업로드 0건을 직접 확인하세요.</b></p>
