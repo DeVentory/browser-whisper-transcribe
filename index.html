@@ -164,6 +164,12 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 .faq details p{margin:0 0 14px;color:var(--muted)}
 .cta2{align-items:flex-start}
 @media (max-width:700px){.cmp{grid-template-columns:minmax(0,1fr)}.cta2 .cta{width:100%}}
+/* 커서: 모든 곳에서 같은 모양으로 고정(손가락·글자 커서로 바뀌지 않음). 터치 기기에는 영향 없음 */
+html,html *,html *::before,html *::after{cursor:url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2232%22%20height=%2232%22%20viewBox=%220%200%2032%2032%22%3E%3Cpath%20d=%22M3%202v20l5.4-4.9%203.7%208.6%203.4-1.5-3.7-8.4h7.6z%22%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.8%22%20stroke-linejoin=%22round%22/%3E%3Cg%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.2%22%3E%3Crect%20x=%2219.6%22%20y=%2221%22%20width=%222.6%22%20height=%225.5%22%20rx=%221.3%22/%3E%3Crect%20x=%2223.4%22%20y=%2217.5%22%20width=%222.6%22%20height=%2212%22%20rx=%221.3%22/%3E%3Crect%20x=%2227.2%22%20y=%2220.5%22%20width=%222.6%22%20height=%226.5%22%20rx=%221.3%22/%3E%3C/g%3E%3C/svg%3E") 3 2,default!important}
+/* 드래그 막기: 글자 선택과 끌기를 막는다. 결과 텍스트(#out)와 입력 칸은 복사할 수 있게 둔다. 파일을 끌어다 놓는 기능은 그대로다 */
+html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#out,#out *,select,input,textarea{-webkit-user-select:text;user-select:text}
+img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><div class="wrap">
@@ -488,12 +494,14 @@ try{new IntersectionObserver(es=>{heroVisible=es[0].isIntersecting;}).observe($(
 
 // 히어로 버튼·끌어다 놓기
 const goTool=()=>{if(audio)$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
-$('heroPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
+const scrollTool=()=>$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+$('heroPick').onclick=()=>{if(busy)return;window.__fromHero=true;scrollTool();$('file').click();};
+document.addEventListener('dragstart',e=>e.preventDefault());
 $('endPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
 $('heroProof').onclick=()=>$('proof').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
 ['dragover','dragenter'].forEach(n=>$('hero').addEventListener(n,()=>{if(!busy)$('hero').classList.add('over')}));
 ['dragleave','drop'].forEach(n=>$('hero').addEventListener(n,()=>$('hero').classList.remove('over')));
-$('hero').addEventListener('drop',e=>{if(busy)return;window.__fromHero=true;setFile(e.dataTransfer.files[0]);});
+$('hero').addEventListener('drop',e=>{if(busy)return;window.__fromHero=true;scrollTool();setFile(e.dataTransfer.files[0]);});
 
 function setBusy(b){
   busy=b;
