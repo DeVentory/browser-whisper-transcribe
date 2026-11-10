@@ -240,12 +240,15 @@ function renderModels(sel){
   setModel(sel);
 }
 renderModels('small');
+// 휴대폰·태블릿(터치 기기)은 탭 메모리 한도가 낮아 turbo(약 1.6GB)가 강제 종료될 수 있다(추정, 실기기 미확인).
+// 그래서 기본 선택을 small로 두고, turbo는 직접 고를 수 있게 남긴다.
+const mobile=/iPhone|iPad|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&matchMedia('(pointer:coarse)').matches);
 pickDevice().then(d=>{
-  device=d; renderModels(d==='webgpu'?'turbo':'small');
+  device=d; renderModels(d==='webgpu'&&!mobile?'turbo':'small');
   const ok=d==='webgpu';
   $('devchip').textContent=ok?'⚡ GPU(WebGPU)로 처리':'🐢 CPU(WASM)로 처리';
   $('devchip').className='chip '+(ok?'ok':'bad');
-  $('env').textContent=ok?'':'이 브라우저·기기에서는 WebGPU(fp16)를 쓸 수 없어 CPU로 처리합니다. small이나 base를 권장합니다.';
+  $('env').textContent=!ok?'이 브라우저·기기에서는 WebGPU(fp16)를 쓸 수 없어 CPU로 처리합니다. small이나 base를 권장합니다.':(mobile?'휴대폰·태블릿은 메모리 한도가 낮아 큰 모델(turbo)이 중단될 수 있어 small을 기본으로 골랐습니다. 전사하는 동안 화면을 켜 두세요.':'');
   if(window.__autoStart)window.__autoStart();
 });
 
