@@ -11,7 +11,7 @@
 <style>
 :root{
   --bg:#f4f5fb;--surface:#ffffff;--surface2:#eceef8;--on:#1a1c24;--muted:#596070;--outline:#d6d9e6;
-  --pri:#3F51B5;--on-pri:#ffffff;--pri-c:#dfe3ff;--on-pri-c:#0e1a63;--ok:#17795a;--ok-c:#d3f2e6;--bad:#b3261e;--bad-c:#fde4e1;--warn-c:#fff1cc;--on-warn:#5c4300;
+  --pri:#3F51B5;--on-pri:#ffffff;--pri-c:#dfe3ff;--on-pri-c:#0e1a63;--ok:#146f53;--ok-c:#d3f2e6;--bad:#b3261e;--bad-c:#fde4e1;--warn-c:#fff1cc;--on-warn:#5c4300;
   --r-lg:24px;--r-md:16px;--r-sm:12px;
 }
 @media (prefers-color-scheme:dark){:root{
@@ -20,7 +20,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--on);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+body{margin:0;background:var(--bg);color:var(--on);word-break:keep-all;overflow-wrap:break-word;font:15px/1.65 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
   padding:0 max(16px,env(safe-area-inset-right)) 56px max(16px,env(safe-area-inset-left))}
 .wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 header{padding:36px 0 4px;display:flex;flex-direction:column;gap:14px}
@@ -87,11 +87,17 @@ progress{width:100%;height:8px;accent-color:var(--pri)}
 .stat{font-size:13px;color:var(--muted)}
 .warnline{background:var(--warn-c);color:var(--on-warn);padding:10px 12px;border-radius:var(--r-sm);line-height:1.6}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.gorow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#live{white-space:pre-wrap;max-height:56vh;min-height:220px;overflow:auto;padding:16px;border-radius:var(--r-md);background:var(--surface2);font-size:15px;line-height:1.75;color:var(--on)}
+#live:empty::before{content:"첫 30초 구간을 받아 적는 중입니다…";color:var(--muted)}
+.livehd{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
 .info .tabs{align-self:flex-start}
 .panel{display:flex;flex-direction:column;gap:10px}
 .panel ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
-.panel table{border-collapse:collapse;width:100%;font-size:14px}
-.panel th,.panel td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--outline)}
+.panel table,.faq table{border-collapse:collapse;width:100%;font-size:14px}
+.faq .tblwrap{margin:0 0 6px}
+.panel th,.panel td,.faq th,.faq td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--outline)}
 .tblwrap{overflow-x:auto}
 a{color:var(--pri)}
 footer{color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:6px;padding-top:4px}
@@ -138,7 +144,8 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 .reqlog .t{color:var(--muted)}
 .reqlog li.send{color:var(--bad);font-weight:700}
 .reqlog .none{color:var(--muted);display:block}
-@media (max-width:560px){.linkbtn{width:100%;text-align:center}.tiles{grid-template-columns:minmax(0,1fr)}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
+@media (max-width:560px){.linkbtn{width:100%;text-align:center}.tiles{gap:8px}.tile{padding:12px 10px}.tile b{font-size:28px}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
+@media (max-width:560px){.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}.tabs::-webkit-scrollbar{display:none}[role=tab]{flex:none;white-space:nowrap}}
 /* 모바일: 터치 영역 44px 이상, 입력 칸 글자 16px(iOS 확대 방지) */
 @media (pointer:coarse),(max-width:560px){
   button,[role=tab],.livebadge,summary{min-height:44px}
@@ -171,7 +178,7 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 html,html *,html *::before,html *::after{cursor:url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2232%22%20height=%2232%22%20viewBox=%220%200%2032%2032%22%3E%3Cpath%20d=%22M3%202v20l5.4-4.9%203.7%208.6%203.4-1.5-3.7-8.4h7.6z%22%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.8%22%20stroke-linejoin=%22round%22/%3E%3Cg%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.2%22%3E%3Crect%20x=%2219.6%22%20y=%2221%22%20width=%222.6%22%20height=%225.5%22%20rx=%221.3%22/%3E%3Crect%20x=%2223.4%22%20y=%2217.5%22%20width=%222.6%22%20height=%2212%22%20rx=%221.3%22/%3E%3Crect%20x=%2227.2%22%20y=%2220.5%22%20width=%222.6%22%20height=%226.5%22%20rx=%221.3%22/%3E%3C/g%3E%3C/svg%3E") 3 2,default!important}
 /* 드래그 막기: 글자 선택과 끌기를 막는다. 결과 텍스트(#out)와 입력 칸은 복사할 수 있게 둔다. 파일을 끌어다 놓는 기능은 그대로다 */
 html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#out,#out *,select,input,textarea{-webkit-user-select:text;user-select:text}
+#out,#out *,#live,select,input,textarea,#proof,#proof *,#log,#warn,#stat,#fname,#env,.info,.info *,.faq details p,#recovInfo,code{-webkit-user-select:text;user-select:text}
 img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 /* 임시 저장 */
 .saveopt{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);padding:6px 0}
@@ -220,12 +227,14 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     <p class="hint" id="env" aria-live="polite"></p>
 
     <h2><span class="num">3</span> 전사하기</h2>
-    <button class="pri" id="go" disabled>▶ 전사 시작</button>
+    <div class="gorow"><button class="pri" id="go" disabled>▶ 전사 시작</button><button id="stop" hidden>⏹ 중지</button></div>
+    <p class="hint" id="goHint">먼저 1단계에서 파일을 고르세요.</p>
     <div class="steps" id="steps" hidden>
       <div class="st" id="st1">📥 모델 준비</div><div class="st" id="st2">🎧 전사</div><div class="st" id="st3">✅ 완료</div>
     </div>
     <progress id="bar" value="0" max="100" hidden></progress>
-    <div id="log" aria-live="polite"></div>
+    <div id="log"></div>
+    <div class="sr" id="sr" aria-live="polite"></div>
     <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 전사하는 동안의 중간 결과를 이 기기에 임시로 저장합니다. 창을 잘못 닫아도 다시 불러올 수 있습니다. 파일 이름과 전사된 글이 이 브라우저에 7일간 남고, 서버로는 보내지 않습니다.</span></label>
   </section>
 
@@ -237,6 +246,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
       <div class="actions"><button class="pri" id="recovOpen">결과 보기</button><button id="recovDel">🗑️ 지우기</button></div>
     </div>
     <div class="empty" id="empty"><span class="big" aria-hidden="true">✨</span><b>전사 결과가 여기에 나타납니다</b><span class="hint">시간 구간별 목록과 자막 파일(SRT·VTT)로도 볼 수 있습니다.<br>첫 실행에는 모델을 내려받느라 시간이 걸립니다.</span></div>
+    <div id="livebox" hidden style="display:flex;flex-direction:column;gap:8px"><p class="livehd">✍️ 받아 적는 중 · 끝나면 구간·자막 형식으로도 볼 수 있습니다</p><div id="live"></div></div>
     <div id="res" hidden style="display:flex;flex-direction:column;gap:12px">
       <div class="tabs" role="tablist" aria-label="결과 형식" id="rtabs">
         <button role="tab" data-k="txt" aria-selected="true">📝 텍스트</button>
@@ -245,7 +255,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
         <button role="tab" data-k="vtt" aria-selected="false">🌐 VTT</button>
         <button role="tab" data-k="json" aria-selected="false">🧾 JSON</button>
       </div>
-      <div id="out" role="tabpanel"></div>
+      <div id="out" role="tabpanel" tabindex="0"></div>
       <div class="actions"><button class="pri" id="save">💾 저장</button><button id="copy">📋 복사</button></div>
       <div class="stat" id="stat"></div>
       <div class="stat warnline" id="warn" hidden></div>
@@ -263,7 +273,6 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   </div>
   <div class="tblwrap"><table><thead><tr><th>접속한 곳</th><th>용도</th><th>요청 수</th><th>받은 크기</th></tr></thead><tbody id="hostTbl"></tbody></table></div>
   <ul class="reqlog" id="reqLog" aria-label="최근 요청"></ul>
-  <p class="hint">🧪 정확도: 한국어 강의 33분 1개에서 맥용 mlx-whisper 결과와 글자 기준 99.5% 일치했습니다. 다른 음성의 정확도는 확인하지 못했습니다.</p>
   <p class="hint">⚠️ 이 숫자는 페이지 코드가 직접 센 값입니다. 코드가 바뀌면 이 숫자도 믿을 수 없으니, 확실히 확인하려면 브라우저 개발자 도구의 네트워크 탭을 직접 여세요(Safari는 '개발자용' 메뉴 → '웹 검사기'). 데이터를 보내는 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 알려 주는 만큼만 나오기 때문에, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
 </section>
 
@@ -287,38 +296,42 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 
 <section class="card faq" id="faq" aria-label="자주 묻는 질문">
   <h2>❓ 자주 묻는 질문</h2>
-  <details><summary>처음에 왜 오래 걸리나요?</summary><p>받아 적는 데 쓰는 모델 파일을 처음 한 번 내려받기 때문입니다. WebGPU 기준으로 turbo 약 1.6GB, small 약 0.4GB, base 약 0.17GB입니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다.</p></details>
-  <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 가장 중요하면 turbo입니다(시험한 강의 1개에서 맥용 앱과 99.5% 일치). 휴대폰이거나 용량·메모리가 걱정되면 small을 고르세요. base는 가장 가볍지만 한국어를 자주 잘못 알아듣습니다.</p></details>
+  <details><summary>처음에 왜 오래 걸리나요? 얼마나 내려받나요?</summary><p>받아 적는 데 쓰는 모델 파일을 처음 한 번 내려받기 때문입니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다. 휴대폰 데이터로 받을 때는 용량에 주의하세요.</p>
+    <div class="tblwrap"><table><thead><tr><th>모델</th><th>GPU(WebGPU)</th><th>CPU(WASM)</th></tr></thead><tbody>
+      <tr><td>🚀 large-v3-turbo</td><td>약 1.6GB</td><td>약 1.1GB</td></tr>
+      <tr><td>⚖️ small</td><td>약 0.4GB</td><td>약 0.25GB</td></tr>
+      <tr><td>⚡ base</td><td>약 0.17GB</td><td>약 0.08GB</td></tr></tbody></table></div>
+    <p class="hint">Hugging Face 파일 목록 기준(2026-11-09).</p></details>
+  <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 가장 중요하면 turbo입니다. 휴대폰이거나 용량·메모리가 걱정되면 small을 고르세요. base는 가장 가볍지만 한국어를 자주 잘못 알아듣습니다.</p></details>
   <details><summary>여러 언어가 섞여 있으면 어떻게 하나요?</summary><p>언어 칸에서 '자동 감지'를 고르세요. 30초 구간마다 모델이 말하는 언어를 알아내 그 언어로 받아 적고, 감지된 언어를 결과 아래에 보여 줍니다. 한 구간 안에서 언어가 번갈아 나오면 더 많이 쓰인 쪽 하나로 정해져서 다른 쪽이 틀릴 수 있습니다. 시험한 것은 두 가지뿐입니다. 한국어 강의 45초는 한국어로 감지되어 한국어 고정과 결과가 같았고, 한국어·영어 문장이 번갈아 나오는 21초 합성 음성은 영어로 감지되어 두 언어가 모두 적혔지만 "페이지 테이블"이 "Page table"로 바뀌었습니다. 한 문장 안에서 섞이는 경우는 시험하지 못했습니다. 감지 단계가 더해져서 조금 느려질 수 있습니다(추정).</p></details>
-  <details><summary>휴대폰에서도 되나요?</summary><p>아직 실제 휴대폰에서는 시험하지 못했습니다. 휴대폰과 태블릿에서는 small을 기본으로 골라 두었고, 전사하는 동안 화면을 켜 두시길 권합니다.</p></details>
-  <details><summary>얼마나 긴 파일까지 되나요?</summary><p>파일 크기는 약 2GB까지입니다. 80분짜리 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 2시간이 넘으면 메모리가 모자랄 수 있습니다. 전사가 한 구간에서 멈추면 그 30초를 건너뛰고 이어가며, 건너뛴 구간은 경고로 알려 드립니다.</p></details>
-  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장이 나올 수 있습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
+  <details><summary>휴대폰에서도 되나요?</summary><p>맥의 Safari에서는 80분 mp4가 끝까지 전사됐지만, iPhone·iPad 실기기에서는 아직 시험하지 못했습니다. 휴대폰과 태블릿에서는 small을 기본으로 골라 두었고, 전사하는 동안 화면을 켜 두시길 권합니다.</p></details>
+  <details><summary>얼마나 긴 파일까지 되나요?</summary><p>파일 크기는 약 2GB까지입니다. 80분짜리 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 형식은 mp3·wav·m4a·mp4·HE-AAC·조각난 mp4·.mov를 시험했고, 아이폰이 직접 찍은 .MOV는 시험하지 못했습니다. 2시간이 넘으면 메모리가 모자랄 수 있습니다. 전사가 한 구간에서 멈추면 그 30초를 건너뛰고 이어가며, 건너뛴 구간은 경고로 알려 드립니다.</p></details>
+  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장(예: "이 영상은")이 나올 수 있고, base 모델은 한국어를 자주 잘못 알아듣습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
   <details><summary>내 파일이 서버로 올라가나요?</summary><p>아니요, 올라가지 않도록 만들었습니다. 위쪽 확인 패널에서 업로드 수를 직접 볼 수 있습니다. 다만 코드는 jsdelivr에서, 모델은 Hugging Face에서 내려받기 때문에 두 곳에는 내 접속 정보(IP 등)가 보입니다.</p></details>
 </section>
 
 <section class="card cta2" id="endcta" aria-label="시작하기">
   <h2>📂 짧은 파일로 먼저 해 보세요</h2>
-  <p class="hint">짧은 파일과 small 모델(약 0.4GB)로 시작하면 처음 내려받는 양도 적고, 결과가 어떤지 빠르게 볼 수 있습니다.</p>
-  <button class="pri cta" id="endPick">📂 파일 열고 받아 적기</button>
+  <p class="hint">짧은 파일과 small 모델로 시작하면 처음 내려받는 양도 적고, 결과가 어떤지 빠르게 볼 수 있습니다. 아래 버튼은 small 모델을 골라 둔 뒤 파일 창을 엽니다.</p>
+  <button class="pri cta" id="endPick">📂 small로 파일 열고 받아 적기</button>
 </section>
 
 <section class="card info" aria-label="안내">
+  <h2>📘 사용법과 개인정보</h2>
   <div class="tabs" role="tablist" aria-label="안내" id="itabs">
     <button role="tab" data-k="how" aria-selected="true">🚀 사용법</button>
     <button role="tab" data-k="priv" aria-selected="false">🔒 개인정보</button>
-    <button role="tab" data-k="size" aria-selected="false">📦 용량</button>
-    <button role="tab" data-k="lim" aria-selected="false">⚠️ 한계</button>
     <button role="tab" data-k="lic" aria-selected="false">⚖️ 라이선스</button>
   </div>
-  <div class="panel" id="p-how">
+  <div class="panel" role="tabpanel" tabindex="0" id="p-how">
     <ul>
       <li>📂 파일을 고르면 이 기기에서 소리만 꺼내 16kHz로 바꿉니다.</li>
-      <li>🧠 모델은 처음 한 번 내려받습니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다.</li>
-      <li>🎧 30초씩 순서대로 받아 적고, 끝난 뒤 텍스트·구간·자막 형식으로 보여 줍니다.</li>
+      <li>🧠 모델은 처음 한 번 내려받습니다(용량은 위 질문 "처음에 왜 오래 걸리나요?"에 있습니다).</li>
+      <li>🎧 30초씩 순서대로 받아 적고, 받아 적는 동안 글이 결과 칸에 차례로 나타납니다. 끝나면 구간·자막 형식으로도 볼 수 있고, 중간에 "중지"를 누르면 거기까지의 결과를 보여 줍니다.</li>
       <li>💻 GPU(WebGPU)가 있으면 빠르고, 없으면 CPU로 처리해 느립니다. 최신 Chrome·Edge를 권장합니다.</li>
     </ul>
   </div>
-  <div class="panel" id="p-priv" hidden>
+  <div class="panel" role="tabpanel" tabindex="0" id="p-priv" hidden>
     <ul>
       <li>🔒 파일 내용은 이 기기 밖으로 보내지 않도록 만들었습니다. base 모델로 전사하는 동안 요청 34건을 세어 봤고, 그중 업로드(POST·PUT)는 0건이었습니다. turbo·small·CPU 경로는 같은 방식으로 확인하지 않았습니다.</li>
       <li>🛟 전사하는 동안의 중간 결과는 이 브라우저(IndexedDB)에 임시로 저장됩니다. 파일 이름과 전사된 글이 7일간 남고, 서버로는 보내지 않습니다. 공용 컴퓨터라면 결과 위쪽의 "지우기"를 누르거나 전사 버튼 아래의 저장 옵션을 끄세요.</li>
@@ -326,23 +339,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
       <li>⚠️ 코드를 외부 CDN에서 받기 때문에, CDN이 해킹당하면 위 설명을 보장할 수 없습니다. 민감한 음성은 오프라인 도구가 더 안전합니다.</li>
     </ul>
   </div>
-  <div class="panel" id="p-size" hidden>
-    <div class="tblwrap"><table><thead><tr><th>모델</th><th>GPU(WebGPU)</th><th>CPU(WASM)</th></tr></thead><tbody>
-      <tr><td>🚀 large-v3-turbo</td><td>약 1.6GB</td><td>약 1.1GB</td></tr>
-      <tr><td>⚖️ small</td><td>약 0.4GB</td><td>약 0.25GB</td></tr>
-      <tr><td>⚡ base</td><td>약 0.17GB</td><td>약 0.08GB</td></tr></tbody></table></div>
-    <p class="hint">Hugging Face 파일 목록 기준(2026-11-09). 휴대폰 데이터로 내려받을 때는 용량에 주의하세요.</p>
-  </div>
-  <div class="panel" id="p-lim" hidden>
-    <ul>
-      <li>🔇 소리가 없거나 끊긴 구간에서 말하지 않은 문장(예: "이 영상은")이 나올 수 있습니다.</li>
-      <li>📉 base 모델은 한국어를 자주 잘못 알아듣습니다.</li>
-      <li>🧪 시험한 것은 맥북 Chrome(WebGPU)에서 한국어 강의 1개(33분)와 합성 음성입니다. 같은 강의를 맥용 mlx-whisper와 비교하면 글자 기준 99.5% 일치했지만, 다른 음성에서의 정확도는 알 수 없습니다.</li>
-      <li>🍎 Safari(맥)에서 80분 mp4가 끝까지 전사되는 것을 확인했고, mp3·m4a·HE-AAC·조각난 mp4·.mov도 시험했습니다. iPhone·iPad 실기기와 아이폰이 직접 찍은 .MOV는 시험하지 못했습니다.</li>
-      <li>🐢 같은 맥에서 mlx-whisper 앱이 이 사이트보다 약 4배 빨랐습니다.</li>
-    </ul>
-  </div>
-  <div class="panel" id="p-lic" hidden>
+  <div class="panel" role="tabpanel" tabindex="0" id="p-lic" hidden>
     <ul>
       <li>앱 코드: MIT</li>
       <li>OpenAI Whisper: MIT · Transformers.js: Apache-2.0 · ONNX Runtime Web: MIT</li>
@@ -366,7 +363,17 @@ const MODELS=[
   {k:'base', em:'⚡',nm:'base',ds:'가장 작고 빠름 · 한국어를 자주 잘못 알아들음'},
 ];
 let device='wasm',worker=null,audio=null,fileName='',busy=false,seq=0,pending=null,results=null,curTab='txt',lastStat='';
-const log=(s,err)=>{$('log').textContent=s;$('log').classList.toggle('err',!!err)};
+const log=(s,err)=>{$('log').textContent=s;$('log').classList.toggle('err',!!err);if(err)say(s);};
+// 스크린리더 알림: 진행 %가 바뀔 때마다 읽지 않도록 단계와 10% 단위로만 알린다
+let saidPct=-1; const say=s=>{$('sr').textContent=s;};
+let stopReq=false;
+const MODEL_NM0={turbo:'large-v3-turbo',small:'small',base:'base'};
+function updGoHint(){
+  const h=$('goHint'); if(!h)return;
+  if(busy){h.hidden=true;return;} h.hidden=false;
+  if(!audio){h.textContent='먼저 1단계에서 파일을 고르세요.';return;}
+  const k=modelValue(); h.textContent='처음 실행하면 모델('+MODEL_NM0[k]+' '+SIZE[device][k]+')을 먼저 내려받습니다.';
+}
 
 async function pickDevice(){
   try{
@@ -396,13 +403,13 @@ function updCtaNote(){
   const k=modelValue();
   $('ctaNote').textContent='처음 한 번 모델('+MODEL_NM[k]+' '+SIZE[device][k]+')을 내려받느라 시간이 걸립니다. 파일은 이 영역에 끌어다 놓아도 됩니다.';
 }
-$('models').addEventListener('change',updCtaNote);
+$('models').addEventListener('change',()=>{updCtaNote();updGoHint();});
 // 휴대폰·태블릿(터치 기기)은 탭 메모리 한도가 낮아 turbo(약 1.6GB)가 강제 종료될 수 있다(추정, 실기기 미확인).
 // 그래서 기본 선택을 small로 두고, turbo는 직접 고를 수 있게 남긴다.
 const mobile=/iPhone|iPad|Android/.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&matchMedia('(pointer:coarse)').matches);
 pickDevice().then(d=>{
   device=d; renderModels(d==='webgpu'&&!mobile?'turbo':'small');
-  updCtaNote();
+  updCtaNote(); updGoHint();
   const ok=d==='webgpu';
   $('devchip').textContent=ok?'⚡ GPU(WebGPU)로 처리':'🐢 CPU(WASM)로 처리';
   $('devchip').className='chip '+(ok?'ok':'bad');
@@ -514,7 +521,7 @@ const goTool=()=>{if(audio)$('tool').scrollIntoView({behavior:reduceMotion?'auto
 const scrollTool=()=>$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
 $('heroPick').onclick=()=>{if(busy)return;window.__fromHero=true;scrollTool();$('file').click();};
 document.addEventListener('dragstart',e=>e.preventDefault());
-$('endPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
+$('endPick').onclick=()=>{if(!busy){setModel('small');updCtaNote();updGoHint();window.__fromHero=true;$('file').click();}};
 ['dragover','dragenter'].forEach(n=>$('hero').addEventListener(n,()=>{if(!busy)$('hero').classList.add('over')}));
 ['dragleave','drop'].forEach(n=>$('hero').addEventListener(n,()=>$('hero').classList.remove('over')));
 $('hero').addEventListener('drop',e=>{if(busy)return;window.__fromHero=true;scrollTool();setFile(e.dataTransfer.files[0]);});
@@ -526,6 +533,8 @@ function setBusy(b){
   $('go').disabled=b||!audio;
   $('drop').classList.toggle('locked',b);
   $('drop').setAttribute('aria-disabled',b?'true':'false');
+  $('stop').hidden=!b; $('stop').disabled=false; $('stop').textContent='⏹ 중지';
+  updGoHint();
 }
 function setStep(n){
   $('steps').hidden=n===0;
@@ -552,7 +561,7 @@ function send(msg,transfer,opt){
     const arm=()=>{if(!opt.timeoutMs)return;clearTimeout(timer);timer=setTimeout(()=>{done();if(worker===w){w.terminate();worker=null;}rej(new Error('__stall__'));},opt.timeoutMs);};
     const h=e=>{const m=e.data; if(m.id!==id)return; arm();
       if(m.type==='progress'){const p=m.p; if(p.status==='progress'&&p.total){$('bar').hidden=false;$('bar').value=p.progress;log('모델 내려받는 중: '+p.file.split('/').pop()+' '+Math.round(p.loaded/1048576)+'/'+Math.round(p.total/1048576)+'MB');}}
-      else if(m.type==='chunk'){if(opt.onChunk)opt.onChunk(m);$('bar').hidden=false;$('bar').value=m.frac*100;log('전사 중… '+Math.round(m.frac*100)+'%');}
+      else if(m.type==='chunk'){$('bar').hidden=false;$('bar').value=m.frac*100;if(opt.onChunk)opt.onChunk(m);else log('전사 중… '+Math.round(m.frac*100)+'%');}
       else if(m.type==='error'){done();rej(new Error(m.message));}
       else if(m.type==='ready'&&msg.type==='load'||m.type==='done'&&msg.type==='run'){done();res(m);}
     };
@@ -565,25 +574,34 @@ function send(msg,transfer,opt){
 
 // 전사 전체: 한 구간이 제한 시간 안에 안 끝나면(모델이 멈춤) 워커를 새로 띄우고 그 30초를 건너뛴 뒤 이어서 한다.
 // 오류가 나도 지금까지 모은 결과는 버리지 않는다.
-async function transcribe(a,model,lang,dev,sec,onSave){
+async function transcribe(a,model,lang,dev,sec,onSave,onText){
   const acc=[],skipped=[],langs={}; let next=0,stalls=0,failure=null;
+  let rate0=null; // 남은 시간 계산용: [시작 시각, 시작 위치(초)]
   const timeoutMs=((window.__wd?+window.__wd:(dev==='webgpu'?60:300)))*1000;
   const t0=performance.now();
   for(;;){
     const copy=a.slice(Math.round(next*16000));
     try{
-      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;if(m.lang)langs[m.lang]=(langs[m.lang]||0)+1;if(onSave)onSave({chunks:acc,skipped,next});}});
+      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);if(!rate0)rate0=[performance.now(),next];next=m.next;if(m.lang)langs[m.lang]=(langs[m.lang]||0)+1;if(onSave)onSave({chunks:acc,skipped,next});
+        if(onText)onText(m.keep);
+        const pct=Math.round(m.frac*100), el=(performance.now()-rate0[0])/1000, done=next-rate0[1];
+        // 남은 시간: 이번 실행에서 처리한 속도로 남은 길이를 나눈다(첫 구간은 모델 예열이 섞여 부정확해서 10초가 지난 뒤부터)
+        const eta=(el>10&&done>0)?Math.max(0,(sec-next)*el/done):null;
+        log('전사 중… '+pct+'%'+(eta!=null?' · 남은 시간 약 '+(eta<60?'1분 이내':Math.round(eta/60)+'분'):''));
+        const b=Math.floor(pct/10); if(b!==saidPct){saidPct=b; say('전사 '+b*10+'%');}
+      }});
       break;
     }catch(e){
+      if(stopReq)break;
       if(e.message!=='__stall__'){failure=e;break;}
       stalls++; skipped.push([next,Math.min(sec,next+30)]); next+=30; if(onSave)onSave({chunks:acc,skipped,next});
       if(next>=sec)break;
       if(stalls>20){failure=new Error('여러 구간에서 모델이 멈춰 중단했습니다.');break;}
       log('⏳ '+mm(next-30)+' 근처에서 모델이 멈춰 그 30초를 건너뛰고 이어서 합니다…');
-      try{ await send({type:'load',model,device:dev}); }catch(e2){failure=e2;break;}
+      try{ await send({type:'load',model,device:dev}); }catch(e2){if(!stopReq)failure=e2;break;}
     }
   }
-  return {chunks:acc,skipped,failure,langs,ms:performance.now()-t0};
+  return {chunks:acc,skipped,failure,langs,ms:performance.now()-t0,stopped:stopReq,next};
 }
 
 const MAX_BYTES=2*1024*1024*1024;
@@ -735,14 +753,14 @@ async function metaDuration(f){
 async function setFile(f){
   if(!f||busy)return;
   window.__fileMeta={name:f.name,size:f.size,mtime:f.lastModified};
-  fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; $('fname').textContent=f.name+' 디코딩 중…';
+  fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; updGoHint(); $('fname').textContent=f.name+' 디코딩 중…';
   try{
     const a=await decode(f,r=>{$('fname').textContent=f.name+' 디코딩 중… '+Math.round(r*100)+'%';});
     let peak=0;for(let i=0;i<a.length;i++){const v=Math.abs(a[i]);if(v>peak)peak=v;}
     const sec=a.length/16000;
     if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
     if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 이런 파일은 없는 문장이 만들어질 수 있어 전사하지 않았습니다.';return;}
-    audio=a; $('go').disabled=false; heroWave(a);
+    audio=a; $('go').disabled=false; heroWave(a); updGoHint();
     const md=(window.__mp4&&window.__mp4.dur)||await metaDuration(f);
     const cut=md&&md-sec>30&&sec<md*0.95;
     window.__decoded={sec,meta:md};
@@ -783,14 +801,14 @@ function fmt(chunks){
 // 결과 보기: 탭 전환
 function showTab(k){
   curTab=k;
-  document.querySelectorAll('#rtabs [role=tab]').forEach(t=>t.setAttribute('aria-selected',t.dataset.k===k?'true':'false'));
+  document.querySelectorAll('#rtabs [role=tab]').forEach(t=>{const on=t.dataset.k===k;t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;if(on)$('out').setAttribute('aria-labelledby',t.id);});
   const o=$('out'); o.textContent=''; o.classList.toggle('mono',k!=='txt'&&k!=='seg');
   if(!results)return;
   if(k==='seg'){for(const s of results.segs){const r=document.createElement('div');r.className='seg';const t=document.createElement('time');t.textContent=ts(s.s,'.').slice(0,-4);const p=document.createElement('span');p.textContent=s.t;r.append(t,p);o.appendChild(r);}}
   else o.textContent=results[k];
   $('save').textContent=(k==='seg'?'💾 TXT 저장':'💾 '+(k==='txt'?'TXT':k.toUpperCase())+' 저장');
 }
-document.querySelectorAll('#rtabs [role=tab]').forEach(t=>t.onclick=()=>showTab(t.dataset.k));
+document.querySelectorAll('#rtabs [role=tab]').forEach(t=>{t.id='rtab-'+t.dataset.k;t.setAttribute('aria-controls','out');t.tabIndex=t.dataset.k==='txt'?0:-1;t.onclick=()=>showTab(t.dataset.k);});
 $('save').onclick=()=>{
   if(!results)return; const k=curTab==='seg'?'txt':curTab;
   const u=URL.createObjectURL(new Blob([results[k]],{type:'text/plain;charset=utf-8'}));
@@ -804,9 +822,19 @@ $('copy').onclick=async()=>{
 };
 
 // 안내 탭
-document.querySelectorAll('#itabs [role=tab]').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('#itabs [role=tab]').forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on?'true':'false');$('p-'+x.dataset.k).hidden=!on;});
-});
+function showInfo(k){
+  document.querySelectorAll('#itabs [role=tab]').forEach(x=>{const on=x.dataset.k===k;x.setAttribute('aria-selected',on?'true':'false');x.tabIndex=on?0:-1;$('p-'+x.dataset.k).hidden=!on;});
+}
+document.querySelectorAll('#itabs [role=tab]').forEach(t=>{t.id='itab-'+t.dataset.k;t.setAttribute('aria-controls','p-'+t.dataset.k);$('p-'+t.dataset.k).setAttribute('aria-labelledby',t.id);t.onclick=()=>showInfo(t.dataset.k);});
+showInfo('how');
+function tabKeys(list,act){
+  $(list).addEventListener('keydown',e=>{
+    const ts=[...$(list).querySelectorAll('[role=tab]')], i=ts.indexOf(document.activeElement); if(i<0)return;
+    const j={ArrowRight:i+1,ArrowLeft:i-1,Home:0,End:ts.length-1}[e.key]; if(j==null)return;
+    e.preventDefault(); const t=ts[(j+ts.length)%ts.length]; act(t.dataset.k); t.focus();
+  });
+}
+tabKeys('rtabs',showTab); tabKeys('itabs',showInfo);
 
 // 결과 화면 만들기(전사가 끝났을 때와 저장된 기록을 불러올 때 같이 쓴다)
 function showOutcome(d,sec,opt){
@@ -833,31 +861,54 @@ $('go').onclick=async()=>{
   // 실행 시작 시점의 값을 고정한다(도중에 바뀌어도 이 실행에는 영향 없음)
   const a=audio, name=fileName||'전사', model=modelValue(), lang=$('lang').value, sec=a.length/16000;
   let dev=device;
-  setBusy(true);$('res').hidden=true;$('empty').hidden=false;results=null;setStep(1);
+  stopReq=false; saidPct=-1;
+  setBusy(true);$('res').hidden=true;$('empty').hidden=false;$('livebox').hidden=true;$('live').textContent='';results=null;setStep(1);
   try{
-    log('모델 준비 중…'); let r;
+    log('모델 준비 중…'); say('모델 준비 중'); let r;
     try{ r=await send({type:'load',model,device:dev}); }
     catch(e){
-      if(dev!=='webgpu')throw e;
+      if(stopReq||dev!=='webgpu')throw e;
       log('GPU로 모델을 준비하지 못해 CPU로 다시 시도합니다… ('+e.message+')');
       if(worker){worker.terminate();worker=null;} dev='wasm';
       r=await send({type:'load',model,device:dev});
     }
-    $('bar').hidden=true; setStep(2); log('모델 준비 '+(r.ms/1000).toFixed(1)+'초. 전사 중…');
+    $('bar').hidden=true; setStep(2); log('모델 준비 '+(r.ms/1000).toFixed(1)+'초. 전사 중…'); say('전사 시작');
+    $('empty').hidden=true; $('livebox').hidden=false;
     const fm=window.__fileMeta||{};
     const rec={v:1,name,size:fm.size||0,mtime:fm.mtime||0,model,lang,dev,sec,startedAt:Date.now(),updatedAt:0,chunks:[],skipped:[],next:0,done:false,failure:null,stat:''};
     $('recov').hidden=true;
-    const d=await transcribe(a,model,lang,dev,sec,p=>{rec.chunks=p.chunks;rec.skipped=p.skipped;rec.next=p.next;rec.updatedAt=Date.now();saveSession(rec);});
-    const {f,w,last}=showOutcome(d,sec);
+    const lv=$('live');
+    const d=await transcribe(a,model,lang,dev,sec,p=>{rec.chunks=p.chunks;rec.skipped=p.skipped;rec.next=p.next;rec.updatedAt=Date.now();saveSession(rec);},
+      keep=>{ // 받아 적은 글을 바로 보여 준다(맨 아래를 보고 있을 때만 따라 내려간다)
+        const atEnd=lv.scrollHeight-lv.scrollTop-lv.clientHeight<40;
+        for(const c of keep){const t=c.text.trim();if(t)lv.append((lv.textContent?'\n':'')+t);}
+        if(atEnd)lv.scrollTop=lv.scrollHeight;
+      });
+    $('livebox').hidden=true;
+    const {f,w,last}=showOutcome(d,sec,d.stopped?{partial:true,note:'⏹ 중지했습니다. '+mm(d.next)+'까지 받아 적은 결과입니다.'}:undefined);
     if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
-    const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+sec.toFixed(1)+'초 · 속도 '+(sec/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
+    const done=d.stopped?Math.min(sec,d.next):sec; // 중지했으면 실제로 처리한 길이로 속도를 잰다
+    const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+(d.stopped?done.toFixed(1)+'/'+sec.toFixed(1):sec.toFixed(1))+'초 · 속도 '+(done/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
     const LN={ko:'한국어',en:'영어',ja:'일본어'}; const ls=Object.entries(d.langs||{}).sort((a,b)=>b[1]-a[1]).map(([c,n])=>(LN[c.replace('?','')]||c)+(c.endsWith('?')?'(감지 실패 대체)':'')+' '+n+'구간').join(', ');
-    lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last)+(lang==='auto'&&ls?' · 감지된 언어: '+ls:''); log(stat); setStep(3);
-    rec.chunks=d.chunks;rec.skipped=d.skipped;rec.done=true;rec.failure=d.failure?d.failure.message:null;rec.stat=stat;rec.updatedAt=Date.now();saveSession(rec);
+    lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last)+(lang==='auto'&&ls?' · 감지된 언어: '+ls:''); log(d.stopped?'⏹ 중지했습니다. '+stat:stat); setStep(3);
+    say(d.stopped?'중지했습니다. 지금까지의 결과를 보여 드립니다.':'전사가 끝났습니다.');
+    rec.chunks=d.chunks;rec.skipped=d.skipped;rec.next=d.next;rec.done=!d.stopped;rec.stopped=!!d.stopped;rec.failure=d.failure?d.failure.message:null;rec.stat=stat;rec.updatedAt=Date.now();saveSession(rec);
     window.__result={text:f.txt,segs:f.segs,warn:w.join(' | '),stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
-  }catch(e){ log('오류: '+e.message,true); setStep(0); window.__result={error:e.message}; }
+  }catch(e){
+    $('livebox').hidden=true; $('empty').hidden=false;
+    if(stopReq){ log('⏹ 중지했습니다. 모델 준비 중이라 받아 적은 글은 없습니다.'); say('중지했습니다.'); setStep(0); window.__result={stopped:true}; }
+    else { log('오류: '+e.message,true); setStep(0); window.__result={error:e.message}; }
+  }
   $('bar').hidden=true;
   setBusy(false);
+};
+// 중지: 워커를 끝내면 진행 중이던 구간은 버려지고, 그 앞까지의 결과로 마무리한다.
+// 다시 시작하면 모델을 새로 준비한다(내려받은 파일은 보통 브라우저에 남아 있다).
+$('stop').onclick=()=>{
+  if(!busy||stopReq)return; stopReq=true;
+  $('stop').disabled=true; $('stop').textContent='중지하는 중…';
+  if(worker){worker.terminate();worker=null;}
+  if(pending)pending.rej(new Error('__stop__'));
 };
 
 // ── 진행 결과 임시 저장(IndexedDB)과 닫기 경고 ──
@@ -896,7 +947,7 @@ $('recovOpen').onclick=()=>{
   fileName=r.name.replace(/\.[^.]+$/,'');
   const when=new Date(r.updatedAt).toLocaleString('ko-KR');
   showOutcome({chunks:r.chunks,skipped:r.skipped,failure:r.failure?new Error(r.failure):null},r.sec,
-    {partial:!r.done,note:'💾 이 기기에 저장된 기록을 불러왔습니다('+r.name+', '+when+').'+(r.done?'':' 창이 닫히거나 새로고침되어 전사가 중단된 기록이라 '+mm(r.next)+' 부근까지만 있습니다. 나머지는 같은 파일로 다시 전사해야 합니다.')});
+    {partial:!r.done,note:'💾 이 기기에 저장된 기록을 불러왔습니다('+r.name+', '+when+').'+(r.done?'':(r.stopped?' 중지한 기록이라 ':' 창이 닫히거나 새로고침되어 전사가 중단된 기록이라 ')+mm(r.next)+' 부근까지만 있습니다. 나머지는 같은 파일로 다시 전사해야 합니다.')});
   $('stat').textContent='⏱️ '+(r.stat||'중단된 기록')+' · 저장된 기록'; setStep(0);
   if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
 };
