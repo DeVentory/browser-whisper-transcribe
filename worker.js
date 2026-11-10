@@ -3,6 +3,35 @@ import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers
 
 let asr = null, loadedKey = null;
 
+// 네트워크 기록: 이 워커가 낸 요청을 메인 화면의 '네트워크 증명' 패널에 알린다.
+// 이 코드는 요청을 읽어 알리기만 하고 막거나 바꾸지 않는다.
+try {
+  new PerformanceObserver((l) => {
+    const rows = l.getEntries().map((e) => ({ url: e.name, type: e.initiatorType, bytes: e.encodedBodySize || 0 })).filter((r) => /^https?:/.test(r.url));
+    if (rows.length) self.postMessage({ type: 'net', kind: 'resource', rows });
+  }).observe({ type: 'resource', buffered: true });
+} catch {}
+const reportSend = (method, url) => { try { self.postMessage({ type: 'net', kind: 'send', method, url: String(url) }); } catch {} };
+const _fetch = self.fetch.bind(self);
+self.fetch = (input, init) => {
+  try {
+    const req = typeof Request !== 'undefined' && input instanceof Request ? input : null;
+    const method = String((init && init.method) || (req && req.method) || 'GET').toUpperCase();
+    const body = (init && init.body) || (req && req.body);
+    if ((method !== 'GET' && method !== 'HEAD') || body) reportSend(method, req ? req.url : input);
+  } catch {}
+  return _fetch(input, init);
+};
+try {
+  const xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open = function (m, u, ...r) { this.__m = String(m).toUpperCase(); this.__u = u; return xo.call(this, m, u, ...r); };
+  XMLHttpRequest.prototype.send = function (b) { if ((this.__m && this.__m !== 'GET' && this.__m !== 'HEAD') || b) reportSend(this.__m || 'XHR', this.__u); return xs.call(this, b); };
+} catch {}
+try {
+  const WS = self.WebSocket;
+  if (WS) self.WebSocket = new Proxy(WS, { construct(t, args) { reportSend('WS', args[0]); return Reflect.construct(t, args); } });
+} catch {}
+
 // revision: 모델 저장소의 커밋 해시(2026-11-09 조회). main이 바뀌어도 같은 파일을 받게 고정한다.
 const MODELS = {
   turbo: { id: 'onnx-community/whisper-large-v3-turbo', revision: '360ebcde2559d60bb474678be3c1de9ef347d01a' },

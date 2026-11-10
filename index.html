@@ -91,22 +91,60 @@ progress{width:100%;height:8px;accent-color:var(--pri)}
 a{color:var(--pri)}
 footer{color:var(--muted);font-size:13px;display:flex;flex-direction:column;gap:6px;padding-top:4px}
 code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 6px;border-radius:6px}
+/* 히어로 */
+.hero{position:relative;isolation:isolate;overflow:hidden;border-radius:32px;margin-top:20px;padding:clamp(28px,6vw,60px) clamp(20px,5vw,56px) clamp(120px,16vw,150px);
+  background:radial-gradient(60% 90% at 12% 0%,color-mix(in srgb,var(--pri) 26%,transparent),transparent 70%),radial-gradient(55% 80% at 100% 100%,color-mix(in srgb,var(--ok) 20%,transparent),transparent 70%),var(--surface);
+  box-shadow:0 28px 70px -36px color-mix(in srgb,var(--pri) 55%,transparent);display:flex;flex-direction:column;gap:20px;align-items:flex-start;transition:outline-color .15s}
+.hero.over{outline:3px solid var(--pri);outline-offset:-3px}
+#wave{position:absolute;left:0;right:0;bottom:0;width:100%;height:150px;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(to top,#000 45%,transparent);mask-image:linear-gradient(to top,#000 45%,transparent)}
+.brandrow{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em}
+.brandrow .logo{width:38px;height:38px;border-radius:13px;font-size:20px}
+.hero h1{font-size:clamp(34px,7.2vw,66px);line-height:1.1;letter-spacing:-.04em;font-weight:800;margin:0;word-break:keep-all;max-width:18ch}
+.grad{white-space:nowrap;background:linear-gradient(100deg,var(--pri),var(--ok));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .tag{font-size:clamp(16px,2.2vw,19px);max-width:46ch;word-break:keep-all}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.cta{padding:17px 30px;font-size:17px;box-shadow:0 12px 30px -12px color-mix(in srgb,var(--pri) 80%,transparent);transition:transform .15s,box-shadow .15s}
+.cta:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px color-mix(in srgb,var(--pri) 85%,transparent)}
+.cta:active{transform:translateY(0)}
+.heronote{margin:0;font-size:13px;color:var(--muted);max-width:60ch}
+/* 네트워크 증명 */
+.proof{gap:18px}
+.proof h2{font-size:clamp(20px,3vw,26px);letter-spacing:-.02em}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface2);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile b{font-size:clamp(30px,6vw,46px);line-height:1.05;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--muted);font-weight:600}
+.tile.ok{background:var(--ok-c)}.tile.ok b,.tile.ok span{color:var(--ok)}
+.tile.bad{background:var(--bad-c)}.tile.bad b,.tile.bad span{color:var(--bad)}
+.reqlog{font:12px/1.7 ui-monospace,Menlo,monospace;max-height:220px;overflow:auto;border-radius:var(--r-md);background:var(--surface2);padding:10px 14px;margin:0;list-style:none;display:flex;flex-direction:column}
+.reqlog li{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;overflow-wrap:anywhere}
+.reqlog .t{color:var(--muted)}
+.reqlog li.send{color:var(--bad);font-weight:700}
+.reqlog .none{color:var(--muted);display:block}
+@media (max-width:560px){.tiles{grid-template-columns:minmax(0,1fr)}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><div class="wrap">
 
-<header>
-  <div class="brand"><div class="logo" aria-hidden="true">🎙️</div><h1>웹 받아쓰기</h1></div>
-  <p class="tag">음성·영상 파일을 끌어다 놓으면 브라우저가 직접 받아 적습니다. 설치도, 가입도 필요 없습니다.</p>
+<section class="hero" id="hero" aria-label="소개">
+  <canvas id="wave" aria-hidden="true"></canvas>
+  <div class="brandrow"><div class="logo" aria-hidden="true">🎙️</div><span>웹 받아쓰기</span></div>
+  <h1>파일은 내 기기를 <span class="grad">떠나지 않습니다.</span></h1>
+  <p class="tag">음성·영상 파일을 끌어다 놓으면, 브라우저가 직접 받아 적습니다. 가입도 설치도 없습니다.</p>
+  <div class="ctas">
+    <button class="pri cta" id="heroPick">📂 파일 선택하기</button>
+    <button class="ghost cta" id="heroProof" style="box-shadow:none">🔍 증거 먼저 보기</button>
+  </div>
+  <p class="heronote">mp3 · m4a · mp4 · mov · wav, 약 2GB까지 · 파일을 이 영역에 끌어다 놓아도 됩니다. 한국어 강의 33분 1개에서 맥용 앱과 99.5% 일치했습니다(다른 음성은 확인하지 못함).</p>
   <div class="chips">
     <span class="chip ok">🔒 파일 내용은 밖으로 보내지 않음</span>
     <span class="chip" id="devchip">⚙️ 장치 확인 중…</span>
     <span class="chip">🧠 Whisper large-v3-turbo</span>
     <span class="chip">📝 TXT · SRT · VTT · JSON</span>
   </div>
-</header>
+</section>
 
-<div class="grid">
+<div class="grid" id="tool">
   <section class="card" aria-label="입력">
     <h2><span class="num">1</span> 파일 고르기</h2>
     <div id="drop" tabindex="0" role="button">
@@ -151,6 +189,19 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
     </div>
   </section>
 </div>
+
+<section class="card proof" id="proof" aria-label="네트워크 증명">
+  <h2>🔍 보내지 않았다는 걸, 직접 확인하세요</h2>
+  <p class="hint">이 페이지가 열린 뒤 낸 요청이 실시간으로 쌓입니다. 파일을 올려 전사해 보고 업로드 칸이 0인지 보세요.</p>
+  <div class="tiles">
+    <div class="tile"><b id="nReq">0</b><span>전체 요청</span></div>
+    <div class="tile"><b id="nHost">0</b><span>접속한 곳</span></div>
+    <div class="tile ok" id="tUp"><b id="nUp">0</b><span>업로드(데이터를 보낸 요청)</span></div>
+  </div>
+  <div class="tblwrap"><table><thead><tr><th>접속한 곳</th><th>무엇을 받나</th><th>요청</th><th>받은 크기</th></tr></thead><tbody id="hostTbl"></tbody></table></div>
+  <ul class="reqlog" id="reqLog" aria-label="최근 요청"></ul>
+  <p class="hint">⚠️ 이 숫자는 페이지 코드가 스스로 센 값이라, 코드가 바뀌면 믿을 수 없습니다. 확실히 보려면 개발자 도구의 네트워크 탭을 직접 여세요(Safari: 개발자용 메뉴 → 웹 검사기). 데이터를 보낸 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 기록해 준 것만 나오므로, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
+</section>
 
 <section class="card info" aria-label="안내">
   <div class="tabs" role="tablist" aria-label="안내" id="itabs">
@@ -252,6 +303,112 @@ pickDevice().then(d=>{
   if(window.__autoStart)window.__autoStart();
 });
 
+// ── 네트워크 증명 패널: 이 페이지와 워커가 낸 요청을 세어 보여 준다(읽기만 한다) ──
+const net={n:0,hosts:new Map(),sends:0,log:[],raf:0};
+try{performance.setResourceTimingBufferSize(1000)}catch{}
+function hostRole(h){
+  if(h===location.host)return '이 페이지의 파일';
+  if(h==='cdn.jsdelivr.net')return '전사 코드·런타임';
+  if(h==='huggingface.co'||h.endsWith('.hf.co')||h==='hf.co')return '모델 파일';
+  return '기타';
+}
+function netAdd(url,type,bytes,send,method){
+  let u;try{u=new URL(url,location.href)}catch{return}
+  if(u.protocol!=='https:'&&u.protocol!=='http:')return;
+  net.n++;
+  let h=net.hosts.get(u.host);if(!h){h={n:0,bytes:0,known:false};net.hosts.set(u.host,h);}
+  h.n++;if(bytes>0){h.bytes+=bytes;h.known=true;}
+  if(send)net.sends++;
+  net.log.unshift({t:new Date(),m:send?method:'요청',host:u.host,path:u.pathname.split('/').slice(-2).join('/'),send});
+  if(net.log.length>60)net.log.length=60;
+  if(!net.raf)net.raf=requestAnimationFrame(netRender);
+}
+function netRender(){
+  net.raf=0;
+  $('nReq').textContent=net.n;$('nHost').textContent=net.hosts.size;$('nUp').textContent=net.sends;
+  $('tUp').className='tile '+(net.sends?'bad':'ok');
+  const tb=$('hostTbl');tb.textContent='';
+  for(const [host,h] of [...net.hosts].sort((a,b)=>b[1].n-a[1].n)){
+    const tr=document.createElement('tr');
+    for(const v of [host,hostRole(host),String(h.n),h.known?(h.bytes>=1048576?(h.bytes/1048576).toFixed(1)+'MB':Math.max(1,Math.round(h.bytes/1024))+'KB'):'확인 불가']){const td=document.createElement('td');td.textContent=v;tr.appendChild(td);}
+    tb.appendChild(tr);
+  }
+  const ul=$('reqLog');ul.textContent='';
+  if(!net.log.length){const li=document.createElement('li');li.className='none';li.textContent='아직 요청이 없습니다.';ul.appendChild(li);return;}
+  for(const r of net.log){
+    const li=document.createElement('li');if(r.send)li.className='send';
+    const a=document.createElement('span');a.className='t';a.textContent=r.t.toTimeString().slice(0,8);
+    const b=document.createElement('span');b.textContent=r.m;
+    const c=document.createElement('span');c.textContent=r.host+'/…/'+r.path;
+    li.append(a,b,c);ul.appendChild(li);
+  }
+}
+try{
+  new PerformanceObserver(l=>{for(const e of l.getEntries())netAdd(e.name,e.initiatorType,e.encodedBodySize||0,false);}).observe({type:'resource',buffered:true});
+}catch{}
+{
+  const rep=(m,u)=>netAdd(u,'send',0,true,m);
+  const f0=window.fetch.bind(window);
+  window.fetch=(input,init)=>{
+    try{const req=input instanceof Request?input:null;const m=String((init&&init.method)||(req&&req.method)||'GET').toUpperCase();const b=(init&&init.body)||(req&&req.body);
+      if((m!=='GET'&&m!=='HEAD')||b)rep(m,req?req.url:String(input));}catch{}
+    return f0(input,init);
+  };
+  try{const xo=XMLHttpRequest.prototype.open,xs=XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open=function(m,u,...r){this.__m=String(m).toUpperCase();this.__u=u;return xo.call(this,m,u,...r);};
+    XMLHttpRequest.prototype.send=function(b){if((this.__m&&this.__m!=='GET'&&this.__m!=='HEAD')||b)rep(this.__m||'XHR',this.__u);return xs.call(this,b);};}catch{}
+  try{if(navigator.sendBeacon){const sb=navigator.sendBeacon.bind(navigator);navigator.sendBeacon=(u,d)=>{rep('BEACON',u);return sb(u,d);};}}catch{}
+  try{const WS=window.WebSocket;if(WS)window.WebSocket=new Proxy(WS,{construct(t,a){rep('WS',a[0]);return Reflect.construct(t,a);}});}catch{}
+}
+netRender();
+
+// ── 히어로: 파형(올린 파일의 실제 소리 크기와 전사 진행률을 그린다) ──
+const wave=$('wave'),wx=wave.getContext('2d');
+let env=null;const reduceMotion=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function heroWave(a){
+  const N=160,step=Math.floor(a.length/N)||1,e=new Float32Array(N);let mx=1e-6;
+  for(let i=0;i<N;i++){let s=0,c=0;for(let j=i*step;j<Math.min(a.length,(i+1)*step);j+=Math.max(1,step>>6)){s+=a[j]*a[j];c++;}e[i]=Math.sqrt(s/Math.max(1,c));if(e[i]>mx)mx=e[i];}
+  for(let i=0;i<N;i++)e[i]=Math.min(1,Math.pow(e[i]/mx,.6));
+  env=e;
+}
+function waveProgress(){
+  if($('st3').classList.contains('done'))return 1;
+  if(!$('bar').hidden&&busy)return Math.min(1,$('bar').value/100);
+  return 0;
+}
+let heroVisible=true;
+function drawWave(now){
+  const r=wave.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1),W=Math.round(r.width*d),H=Math.round(r.height*d);
+  if(!W||!H)return;
+  if(wave.width!==W||wave.height!==H){wave.width=W;wave.height=H;}
+  wx.clearRect(0,0,W,H);
+  const cs=getComputedStyle(document.documentElement),pri=cs.getPropertyValue('--pri').trim()||'#3F51B5';
+  const bw=3*d,gap=4*d,n=Math.floor(W/(bw+gap)),t=reduceMotion?0:now/1000,p=waveProgress();
+  for(let i=0;i<n;i++){
+    const x=i*(bw+gap),k=i/n;
+    let a=env?env[Math.floor(k*env.length)]:0.28+0.2*Math.sin(i*.33+t*1.3)+0.12*Math.sin(i*.11-t*.8)+0.06*Math.sin(i*.9+t*2.1);
+    a=Math.max(.06,Math.min(1,a));
+    const h=a*H*.85,y=H-h;
+    wx.globalAlpha=(env&&k>p)?.28:.85;wx.fillStyle=pri;
+    if(wx.roundRect){wx.beginPath();wx.roundRect(x,y,bw,h,bw/2);wx.fill();}else wx.fillRect(x,y,bw,h);
+  }
+  wx.globalAlpha=1;
+}
+(function loop(now){
+  if(heroVisible&&!document.hidden)drawWave(now);
+  if(!reduceMotion)requestAnimationFrame(loop);
+})(0);
+if(reduceMotion)setInterval(()=>{if(heroVisible)drawWave(0)},500);
+try{new IntersectionObserver(es=>{heroVisible=es[0].isIntersecting;}).observe($('hero'));}catch{}
+
+// 히어로 버튼·끌어다 놓기
+const goTool=()=>{if(audio)$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
+$('heroPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
+$('heroProof').onclick=()=>$('proof').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+['dragover','dragenter'].forEach(n=>$('hero').addEventListener(n,()=>{if(!busy)$('hero').classList.add('over')}));
+['dragleave','drop'].forEach(n=>$('hero').addEventListener(n,()=>$('hero').classList.remove('over')));
+$('hero').addEventListener('drop',e=>{if(busy)return;window.__fromHero=true;setFile(e.dataTransfer.files[0]);});
+
 function setBusy(b){
   busy=b;
   document.querySelectorAll('input[name=model]').forEach(i=>i.disabled=b);
@@ -269,6 +426,7 @@ function setStep(n){
 function ensureWorker(){
   if(!worker){
     worker=new Worker('worker.js',{type:'module'});
+    worker.addEventListener('message',e=>{const m=e.data;if(m&&m.type==='net'){if(m.kind==='send')netAdd(m.url,'send',0,true,m.method);else for(const r of m.rows)netAdd(r.url,r.type,r.bytes,false);}});
     worker.onerror=ev=>{ // 모듈 로드 실패(CDN 접속 불가 등)
       const p=pending; worker=null;
       if(p)p.rej(new Error('전사 코드를 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.'));
@@ -460,12 +618,13 @@ async function setFile(f){
     const sec=a.length/16000;
     if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
     if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 전사하면 없는 문장이 나올 수 있어 막았습니다.';return;}
-    audio=a; $('go').disabled=false;
+    audio=a; $('go').disabled=false; heroWave(a);
     const md=(window.__mp4&&window.__mp4.dur)||await metaDuration(f);
     const cut=md&&md-sec>30&&sec<md*0.95;
     window.__decoded={sec,meta:md};
     $('fname').textContent=(cut?'⚠️ 파일 길이는 '+mm(md)+'인데 소리는 '+mm(sec)+'까지만 읽혔습니다. 뒷부분은 전사되지 않습니다. 다른 형식(mp3·wav)으로 변환해 올려 보세요. · ':'')+'✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
     window.__audioReady=true;
+    if(window.__fromHero){window.__fromHero=false;goTool();}
   }catch(e){ $('fname').textContent=e.message; }
 }
 $('drop').onclick=()=>{if(!busy)$('file').click();};
