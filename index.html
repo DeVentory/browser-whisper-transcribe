@@ -170,6 +170,11 @@ html,html *,html *::before,html *::after{cursor:url("data:image/svg+xml,%3Csvg%2
 html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #out,#out *,select,input,textarea{-webkit-user-select:text;user-select:text}
 img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
+/* 임시 저장 */
+.saveopt{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);padding:6px 0}
+.saveopt input{width:20px;height:20px;accent-color:var(--pri);flex:none;margin-top:2px}
+.recov{background:var(--pri-c);color:var(--on-pri-c);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.recov span{font-size:13.5px;opacity:.9;overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><div class="wrap">
@@ -217,10 +222,16 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     </div>
     <progress id="bar" value="0" max="100" hidden></progress>
     <div id="log" aria-live="polite"></div>
+    <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 진행 결과를 이 기기에 임시 저장 — 창을 닫아도 불러올 수 있습니다. 전사 텍스트와 파일 이름이 이 브라우저에 7일간 남고, 서버로는 보내지 않습니다.</span></label>
   </section>
 
   <section class="card" aria-label="결과">
     <h2>📄 결과</h2>
+    <div class="recov" id="recov" hidden>
+      <b>💾 이 기기에 저장된 전사 기록이 있습니다</b>
+      <span id="recovInfo"></span>
+      <div class="actions"><button class="pri" id="recovOpen">결과 보기</button><button id="recovDel">🗑️ 지우기</button></div>
+    </div>
     <div class="empty" id="empty"><span class="big" aria-hidden="true">✨</span><b>전사 결과가 여기에 나타납니다</b><span class="hint">시간 구간별 목록과 자막 파일(SRT·VTT)로도 볼 수 있습니다.<br>첫 실행에는 모델을 내려받느라 시간이 걸립니다.</span></div>
     <div id="res" hidden style="display:flex;flex-direction:column;gap:12px">
       <div class="tabs" role="tablist" aria-label="결과 형식" id="rtabs">
@@ -305,6 +316,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <div class="panel" id="p-priv" hidden>
     <ul>
       <li>🔒 파일 내용은 이 기기 밖으로 보내지 않도록 만들었습니다. base 모델로 전사하는 동안 요청 34건을 기록했고 업로드 요청(POST·PUT)은 0건이었습니다. turbo·small·CPU 경로는 이 방식으로 확인하지 않았습니다.</li>
+      <li>🛟 전사 도중 결과는 이 브라우저(IndexedDB)에 임시 저장됩니다. 파일 이름과 전사 텍스트가 7일간 남고, 서버로는 보내지 않습니다. 공용 컴퓨터라면 결과 위쪽의 "지우기"를 누르거나 전사 버튼 아래의 저장 옵션을 끄세요.</li>
       <li>🌐 처음 접속하면 전사 코드는 <code>cdn.jsdelivr.net</code>에서, 모델은 <code>huggingface.co</code>·<code>hf.co</code>에서 내려받습니다. 이 서비스들에는 IP 같은 접속 정보가 보입니다.</li>
       <li>⚠️ 코드가 외부 CDN에서 오므로 CDN이 침해되면 위 설명이 성립하지 않을 수 있습니다. 민감한 음성은 오프라인 도구가 더 안전합니다.</li>
     </ul>
@@ -549,18 +561,18 @@ function send(msg,transfer,opt){
 
 // 전사 전체: 한 구간이 제한 시간 안에 안 끝나면(모델이 멈춤) 워커를 새로 띄우고 그 30초를 건너뛴 뒤 이어서 한다.
 // 오류가 나도 지금까지 모은 결과는 버리지 않는다.
-async function transcribe(a,model,lang,dev,sec){
+async function transcribe(a,model,lang,dev,sec,onSave){
   const acc=[],skipped=[]; let next=0,stalls=0,failure=null;
   const timeoutMs=((window.__wd?+window.__wd:(dev==='webgpu'?60:300)))*1000;
   const t0=performance.now();
   for(;;){
     const copy=a.slice(Math.round(next*16000));
     try{
-      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;}});
+      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;if(onSave)onSave({chunks:acc,skipped,next});}});
       break;
     }catch(e){
       if(e.message!=='__stall__'){failure=e;break;}
-      stalls++; skipped.push([next,Math.min(sec,next+30)]); next+=30;
+      stalls++; skipped.push([next,Math.min(sec,next+30)]); next+=30; if(onSave)onSave({chunks:acc,skipped,next});
       if(next>=sec)break;
       if(stalls>20){failure=new Error('여러 구간에서 모델이 멈춰 중단했습니다.');break;}
       log('⏳ '+mm(next-30)+' 근처에서 모델이 멈춰 그 30초를 건너뛰고 이어서 합니다…');
@@ -705,6 +717,7 @@ async function metaDuration(f){
 }
 async function setFile(f){
   if(!f||busy)return;
+  window.__fileMeta={name:f.name,size:f.size,mtime:f.lastModified};
   fileName=f.name.replace(/\.[^.]+$/,''); audio=null; $('go').disabled=true; $('fname').textContent=f.name+' 디코딩 중…';
   try{
     const a=await decode(f,r=>{$('fname').textContent=f.name+' 디코딩 중… '+Math.round(r*100)+'%';});
@@ -778,6 +791,26 @@ document.querySelectorAll('#itabs [role=tab]').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('#itabs [role=tab]').forEach(x=>{const on=x===t;x.setAttribute('aria-selected',on?'true':'false');$('p-'+x.dataset.k).hidden=!on;});
 });
 
+// 결과 화면 만들기(전사가 끝났을 때와 저장된 기록을 불러올 때 같이 쓴다)
+function showOutcome(d,sec,opt){
+  opt=opt||{};
+    const chunks=d.chunks.length?d.chunks:[{text:'',timestamp:[0,sec]}]; const f=fmt(chunks);
+    results=f; if(!f.txt.trim()){results={segs:[],txt:'인식된 말이 없습니다.',srt:'',vtt:'WEBVTT\n',json:'[]'};}
+    const w=[];
+    if(opt.note)w.push(opt.note);
+    if(d.skipped.length)w.push('⏳ 모델이 멈춰서 건너뛴 구간 '+d.skipped.length+'곳: '+d.skipped.slice(0,6).map(x=>mm(x[0])+'~'+mm(x[1])).join(', ')+(d.skipped.length>6?' 외 '+(d.skipped.length-6)+'곳':'')+'. 해당 부분의 말은 결과에 없습니다.');
+    if(d.failure)w.push('⚠️ 오류로 '+mm(d.chunks.length?d.chunks[d.chunks.length-1].timestamp[1]:0)+' 부근에서 중단되어 지금까지의 결과만 보여 드립니다. ('+d.failure.message+')');
+    if(f.removed)w.push('🧹 같은 문장이 4번 이상 반복되는 구간 '+f.runs+'곳('+f.removed+'줄)을 환각으로 보고 결과에서 뺐습니다. 무음이나 잡음 구간에서 모델이 없는 문장을 만들어 낸 것입니다.');
+    const segs=f.segs; const last=segs.length?segs[segs.length-1].e:0;
+    if(!opt.partial&&sec-last>60)w.push('⚠️ '+mm(last)+' 이후부터 끝('+mm(sec)+')까지는 인식된 말이 없습니다. 소리가 작거나 무음·음악이거나 모델이 놓쳤을 수 있습니다. 해당 구간을 따로 잘라 다시 시도해 보세요.');
+    let prev=0,miss=[];
+    for(const sg of segs){if(sg.s-prev>180)miss.push([prev,sg.s]);prev=Math.max(prev,sg.e);}
+    if(miss.length)w.push('ℹ️ 3분 넘게 말이 인식되지 않은 구간: '+miss.slice(0,5).map(m=>mm(m[0])+'~'+mm(m[1])).join(', ')+(miss.length>5?' 외 '+(miss.length-5)+'곳':''));
+    $('warn').hidden=!w.length; $('warn').textContent=w.join('\n'); $('warn').style.whiteSpace='pre-line';
+    $('empty').hidden=true; $('res').hidden=false; showTab('txt');
+  return {f,w,last};
+}
+
 $('go').onclick=async()=>{
   if(busy||!audio)return;
   // 실행 시작 시점의 값을 고정한다(도중에 바뀌어도 이 실행에는 영향 없음)
@@ -794,28 +827,73 @@ $('go').onclick=async()=>{
       r=await send({type:'load',model,device:dev});
     }
     $('bar').hidden=true; setStep(2); log('모델 준비 '+(r.ms/1000).toFixed(1)+'초. 전사 중…');
-    const d=await transcribe(a,model,lang,dev,sec);
-    const chunks=d.chunks.length?d.chunks:[{text:'',timestamp:[0,sec]}]; const f=fmt(chunks);
-    results=f; if(!f.txt.trim()){results={segs:[],txt:'인식된 말이 없습니다.',srt:'',vtt:'WEBVTT\n',json:'[]'};}
-    const w=[];
-    if(d.skipped.length)w.push('⏳ 모델이 멈춰서 건너뛴 구간 '+d.skipped.length+'곳: '+d.skipped.slice(0,6).map(x=>mm(x[0])+'~'+mm(x[1])).join(', ')+(d.skipped.length>6?' 외 '+(d.skipped.length-6)+'곳':'')+'. 해당 부분의 말은 결과에 없습니다.');
-    if(d.failure)w.push('⚠️ 오류로 '+mm(d.chunks.length?d.chunks[d.chunks.length-1].timestamp[1]:0)+' 부근에서 중단되어 지금까지의 결과만 보여 드립니다. ('+d.failure.message+')');
-    if(f.removed)w.push('🧹 같은 문장이 4번 이상 반복되는 구간 '+f.runs+'곳('+f.removed+'줄)을 환각으로 보고 결과에서 뺐습니다. 무음이나 잡음 구간에서 모델이 없는 문장을 만들어 낸 것입니다.');
-    const segs=f.segs; const last=segs.length?segs[segs.length-1].e:0;
-    if(sec-last>60)w.push('⚠️ '+mm(last)+' 이후부터 끝('+mm(sec)+')까지는 인식된 말이 없습니다. 소리가 작거나 무음·음악이거나 모델이 놓쳤을 수 있습니다. 해당 구간을 따로 잘라 다시 시도해 보세요.');
-    let prev=0,miss=[];
-    for(const sg of segs){if(sg.s-prev>180)miss.push([prev,sg.s]);prev=Math.max(prev,sg.e);}
-    if(miss.length)w.push('ℹ️ 3분 넘게 말이 인식되지 않은 구간: '+miss.slice(0,5).map(m=>mm(m[0])+'~'+mm(m[1])).join(', ')+(miss.length>5?' 외 '+(miss.length-5)+'곳':''));
-    $('warn').hidden=!w.length; $('warn').textContent=w.join('\n'); $('warn').style.whiteSpace='pre-line';
-    $('empty').hidden=true; $('res').hidden=false; showTab('txt');
+    const fm=window.__fileMeta||{};
+    const rec={v:1,name,size:fm.size||0,mtime:fm.mtime||0,model,lang,dev,sec,startedAt:Date.now(),updatedAt:0,chunks:[],skipped:[],next:0,done:false,failure:null,stat:''};
+    $('recov').hidden=true;
+    const d=await transcribe(a,model,lang,dev,sec,p=>{rec.chunks=p.chunks;rec.skipped=p.skipped;rec.next=p.next;rec.updatedAt=Date.now();saveSession(rec);});
+    const {f,w,last}=showOutcome(d,sec);
     if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
     const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+sec.toFixed(1)+'초 · 속도 '+(sec/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
     lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last); log(stat); setStep(3);
+    rec.chunks=d.chunks;rec.skipped=d.skipped;rec.done=true;rec.failure=d.failure?d.failure.message:null;rec.stat=stat;rec.updatedAt=Date.now();saveSession(rec);
     window.__result={text:f.txt,segs:f.segs,warn:w.join(' | '),stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
   }catch(e){ log('오류: '+e.message,true); setStep(0); window.__result={error:e.message}; }
   $('bar').hidden=true;
   setBusy(false);
 };
+
+// ── 진행 결과 임시 저장(IndexedDB)과 닫기 경고 ──
+// 전사는 이 기기에서만 돌기 때문에 창을 닫으면 멈춘다. 대신 30초 구간이 끝날 때마다 결과를 이 브라우저에 저장해 두고,
+// 다시 열었을 때 불러올 수 있게 한다. 서버로 보내지 않으며 7일 뒤 지운다. 끄거나 직접 지울 수 있다.
+const SAVE_DAYS=7;
+let autosave=true; try{autosave=localStorage.getItem('bwt-autosave')!=='0';}catch{}
+const idb={
+  open:()=>new Promise((res,rej)=>{const r=indexedDB.open('bwt-session',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}),
+  async run(mode,fn){const db=await idb.open();try{return await new Promise((res,rej)=>{const t=db.transaction('s',mode);const rq=fn(t.objectStore('s'));t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});}finally{db.close();}},
+  put:v=>idb.run('readwrite',o=>o.put(v,'last')),
+  get:()=>idb.run('readonly',o=>o.get('last')),
+  del:()=>idb.run('readwrite',o=>o.delete('last')),
+};
+let saveChain=Promise.resolve();
+function saveSession(rec){
+  if(!autosave)return;
+  const snap={...rec,chunks:rec.chunks.slice(),skipped:rec.skipped.slice()};
+  saveChain=saveChain.then(()=>idb.put(snap)).catch(()=>{});
+}
+let recovRec=null;
+function showRecov(rec){
+  recovRec=rec;
+  $('recovInfo').textContent=rec.name+' · '+(rec.done?'완료된 기록':'중단된 기록('+mm(rec.next)+' / '+mm(rec.sec)+' 부근까지)')+' · 저장 '+new Date(rec.updatedAt).toLocaleString('ko-KR');
+  $('recov').hidden=false;
+}
+async function checkRecovery(){
+  try{
+    const rec=await idb.get(); if(!rec||rec.v!==1||!rec.updatedAt)return;
+    if(Date.now()-rec.updatedAt>SAVE_DAYS*864e5){await idb.del();return;}
+    showRecov(rec);
+  }catch{}
+}
+$('recovOpen').onclick=()=>{
+  if(busy||!recovRec)return; const r=recovRec;
+  fileName=r.name.replace(/\.[^.]+$/,'');
+  const when=new Date(r.updatedAt).toLocaleString('ko-KR');
+  showOutcome({chunks:r.chunks,skipped:r.skipped,failure:r.failure?new Error(r.failure):null},r.sec,
+    {partial:!r.done,note:'💾 이 기기에 저장된 기록을 불러왔습니다('+r.name+', '+when+').'+(r.done?'':' 창이 닫히거나 새로고침되어 전사가 중단된 기록이라 '+mm(r.next)+' 부근까지만 있습니다. 나머지는 같은 파일로 다시 전사해야 합니다.')});
+  $('stat').textContent='⏱️ '+(r.stat||'중단된 기록')+' · 저장된 기록'; setStep(0);
+  if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
+};
+$('recovDel').onclick=async()=>{
+  saveChain=saveChain.then(()=>idb.del()).catch(()=>{}); await saveChain;
+  $('recov').hidden=true; recovRec=null;
+};
+$('autosave').checked=autosave;
+$('autosave').onchange=e=>{
+  autosave=e.target.checked; try{localStorage.setItem('bwt-autosave',autosave?'1':'0');}catch{}
+  if(!autosave){saveChain=saveChain.then(()=>idb.del()).catch(()=>{});$('recov').hidden=true;recovRec=null;}
+};
+// 전사 중에 창을 닫거나 새로고침하려 하면 확인을 받는다(문구는 브라우저가 정한다. 휴대폰에서는 안 뜰 수 있다)
+window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue='';}});
+checkRecovery();
 
 // 시험용: localhost에서만, test/ 아래 같은 출처 파일만 자동 실행한다(?auto=test/ref.wav&model=base)
 const q=new URLSearchParams(location.search), auto=q.get('auto');
