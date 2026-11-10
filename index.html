@@ -137,6 +137,33 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 .reqlog li.send{color:var(--bad);font-weight:700}
 .reqlog .none{color:var(--muted);display:block}
 @media (max-width:560px){.linkbtn{width:100%;text-align:center}.tiles{grid-template-columns:minmax(0,1fr)}.hero{border-radius:24px}.cta{width:100%}.ctas{width:100%}}
+/* 모바일: 터치 영역 44px 이상, 입력 칸 글자 16px(iOS 확대 방지) */
+@media (pointer:coarse),(max-width:560px){
+  button,[role=tab],.livebadge,summary{min-height:44px}
+  [role=tab]{padding:0 16px}
+  .livebadge{padding:0 16px}
+  select{font-size:16px;height:44px;padding:0 12px}
+  footer a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
+}
+/* 왜 브라우저 안에서 · 자주 묻는 질문 · 마감 */
+.why h2,.faq h2,.cta2 h2{font-size:clamp(20px,3vw,26px);letter-spacing:-.02em}
+.cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cmp>div{border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:8px}
+.cmp h3{margin:0;font-size:15px}
+.cmp ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.cmp .gain{background:var(--ok-c);color:var(--ok)}
+.cmp .gain ul{color:var(--on)}
+.cmp .cost{background:var(--warn-c);color:var(--on-warn)}
+.cmp .cost ul{color:var(--on-warn)}
+.faq details{border-top:1px solid var(--outline)}
+.faq details:last-of-type{border-bottom:1px solid var(--outline)}
+.faq summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"＋";color:var(--muted);flex:none}
+.faq details[open] summary::after{content:"－"}
+.faq details p{margin:0 0 14px;color:var(--muted)}
+.cta2{align-items:flex-start}
+@media (max-width:700px){.cmp{grid-template-columns:minmax(0,1fr)}.cta2 .cta{width:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><div class="wrap">
@@ -217,6 +244,40 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
   <ul class="reqlog" id="reqLog" aria-label="최근 요청"></ul>
   <p class="hint">🧪 정확도: 한국어 강의 33분 1개에서 맥용 mlx-whisper 결과와 글자 기준 99.5% 일치했습니다. 다른 음성의 정확도는 확인하지 못했습니다.</p>
   <p class="hint">⚠️ 이 숫자는 페이지 코드가 스스로 센 값이라, 코드가 바뀌면 믿을 수 없습니다. 확실히 보려면 개발자 도구의 네트워크 탭을 직접 여세요(Safari: 개발자용 메뉴 → 웹 검사기). 데이터를 보낸 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 기록해 준 것만 나오므로, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
+</section>
+
+<section class="card why" id="why" aria-label="왜 브라우저 안에서">
+  <h2>🧭 얻는 것과 치르는 것</h2>
+  <p class="hint">맥에서 쓰던 받아쓰기 앱(SwiftUI + mlx-whisper)을 설치 없이 다른 사람도 쓰도록 브라우저로 옮긴 개인 프로젝트입니다. 서버에 올려 처리하는 방식이면 파일이 그 서버를 거칩니다. 이 사이트는 처리를 이 기기에서 하는 대신, 아래 대가를 치릅니다.</p>
+  <div class="cmp">
+    <div class="gain"><h3>✅ 얻는 것</h3><ul>
+      <li>파일이 이 기기를 떠나지 않도록 만들었습니다(위 패널에서 직접 확인).</li>
+      <li>가입도 설치도 없습니다.</li>
+      <li>같은 영상을 맥용 앱과 비교해 글자 기준 99.5% 일치했습니다(한국어 강의 33분 1개).</li>
+    </ul></div>
+    <div class="cost"><h3>⚠️ 치르는 것</h3><ul>
+      <li>처음에는 모델을 내려받습니다(약 0.17~1.6GB).</li>
+      <li>같은 맥에서 맥용 앱보다 약 4배 느렸습니다(5분 음성 1건 측정).</li>
+      <li>휴대폰은 확인하지 못했고, 메모리 때문에 큰 모델이 중단될 수 있습니다(추정).</li>
+      <li>코드와 모델을 받는 서비스에는 접속 정보(IP 등)가 보입니다.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="card faq" id="faq" aria-label="자주 묻는 질문">
+  <h2>❓ 자주 묻는 질문</h2>
+  <details><summary>내 파일이 서버로 올라가나요?</summary><p>올라가지 않도록 만들었습니다. 위 "네트워크 증명 패널"에서 업로드 수를 직접 확인하세요. 다만 코드는 jsdelivr에서, 모델은 Hugging Face에서 받기 때문에 그 서비스들에는 접속 정보가 보입니다.</p></details>
+  <details><summary>처음에 왜 오래 걸리나요?</summary><p>전사 모델을 내려받기 때문입니다. WebGPU 기준으로 turbo 약 1.6GB, small 약 0.4GB, base 약 0.17GB입니다. 같은 브라우저에 저장되는 것이 일반적이지만, 이 사이트에서 다시 받지 않는지는 확인하지 못했습니다.</p></details>
+  <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 중요하면 turbo(시험한 강의 1개에서 맥용 앱과 99.5% 일치)입니다. 휴대폰이거나 용량·메모리가 걱정되면 small입니다. base는 가장 가볍지만 한국어 오인식이 많습니다.</p></details>
+  <details><summary>휴대폰에서도 되나요?</summary><p>실기기에서는 확인하지 못했습니다. 터치 기기에서는 기본 모델을 small로 고르고, 전사하는 동안 화면을 켜 두길 권합니다.</p></details>
+  <details><summary>얼마나 긴 파일까지 되나요?</summary><p>약 2GB 이하입니다. 80분 길이 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 2시간이 넘으면 메모리가 부족할 수 있고, 한 구간에서 멈추면 그 30초를 건너뛰고 이어서 하며 경고로 알려 줍니다.</p></details>
+  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>무음이거나 잘린 구간에서 없는 문장이 나올 수 있습니다. 중요한 용도라면 결과를 직접 확인하세요. 길이가 맞지 않거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
+</section>
+
+<section class="card cta2" id="endcta" aria-label="시작하기">
+  <h2>📂 파일 하나로 시험해 보세요</h2>
+  <p class="hint">짧은 파일과 small 모델로 먼저 해 보면 처음 내려받는 용량(약 0.4GB)을 줄일 수 있습니다.</p>
+  <button class="pri cta" id="endPick">📂 파일 열고 받아 적기</button>
 </section>
 
 <section class="card info" aria-label="안내">
@@ -428,6 +489,7 @@ try{new IntersectionObserver(es=>{heroVisible=es[0].isIntersecting;}).observe($(
 // 히어로 버튼·끌어다 놓기
 const goTool=()=>{if(audio)$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
 $('heroPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
+$('endPick').onclick=()=>{if(!busy){window.__fromHero=true;$('file').click();}};
 $('heroProof').onclick=()=>$('proof').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
 ['dragover','dragenter'].forEach(n=>$('hero').addEventListener(n,()=>{if(!busy)$('hero').classList.add('over')}));
 ['dragleave','drop'].forEach(n=>$('hero').addEventListener(n,()=>$('hero').classList.remove('over')));
