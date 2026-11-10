@@ -196,7 +196,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <div class="chips">
     <span class="chip" id="devchip">⚙️ 장치 확인 중…</span>
     <span class="chip">📝 TXT · SRT · VTT · JSON</span>
-    <span class="chip">🌐 한국어 · English · 日本語</span>
+    <span class="chip">🌐 한국어 · English · 日本語 · 자동 감지</span>
   </div>
 </section>
 
@@ -214,8 +214,9 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     <h2><span class="num">2</span> 모델과 언어</h2>
     <fieldset class="models" id="models"><legend class="hint">모델이 클수록 더 정확하지만, 처음 내려받는 용량도 커집니다</legend></fieldset>
     <div class="row">
-      <label class="f">🌐 언어<select id="lang"><option value="korean">한국어</option><option value="english">English</option><option value="japanese">日本語</option></select></label>
+      <label class="f">🌐 언어<select id="lang"><option value="korean">한국어</option><option value="english">English</option><option value="japanese">日本語</option><option value="auto">자동 감지 (구간마다 언어 확인)</option></select></label>
     </div>
+    <p class="hint" id="langHint" aria-live="polite">'자동 감지'는 30초 구간마다 말하는 언어를 알아내 그 언어로 받아 적습니다. 한 가지 언어만 쓴 파일이면 직접 고르는 편이 더 안정적일 수 있고, 시간도 덜 걸립니다.</p>
     <p class="hint" id="env" aria-live="polite"></p>
 
     <h2><span class="num">3</span> 전사하기</h2>
@@ -288,6 +289,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <h2>❓ 자주 묻는 질문</h2>
   <details><summary>처음에 왜 오래 걸리나요?</summary><p>받아 적는 데 쓰는 모델 파일을 처음 한 번 내려받기 때문입니다. WebGPU 기준으로 turbo 약 1.6GB, small 약 0.4GB, base 약 0.17GB입니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다.</p></details>
   <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 가장 중요하면 turbo입니다(시험한 강의 1개에서 맥용 앱과 99.5% 일치). 휴대폰이거나 용량·메모리가 걱정되면 small을 고르세요. base는 가장 가볍지만 한국어를 자주 잘못 알아듣습니다.</p></details>
+  <details><summary>여러 언어가 섞여 있으면 어떻게 하나요?</summary><p>언어 칸에서 '자동 감지'를 고르세요. 30초 구간마다 모델이 말하는 언어를 알아내 그 언어로 받아 적고, 감지된 언어를 결과 아래에 보여 줍니다. 한 구간 안에서 언어가 번갈아 나오면 더 많이 쓰인 쪽 하나로 정해져서 다른 쪽이 틀릴 수 있습니다. 시험한 것은 두 가지뿐입니다. 한국어 강의 45초는 한국어로 감지되어 한국어 고정과 결과가 같았고, 한국어·영어 문장이 번갈아 나오는 21초 합성 음성은 영어로 감지되어 두 언어가 모두 적혔지만 "페이지 테이블"이 "Page table"로 바뀌었습니다. 한 문장 안에서 섞이는 경우는 시험하지 못했습니다. 감지 단계가 더해져서 조금 느려질 수 있습니다(추정).</p></details>
   <details><summary>휴대폰에서도 되나요?</summary><p>아직 실제 휴대폰에서는 시험하지 못했습니다. 휴대폰과 태블릿에서는 small을 기본으로 골라 두었고, 전사하는 동안 화면을 켜 두시길 권합니다.</p></details>
   <details><summary>얼마나 긴 파일까지 되나요?</summary><p>파일 크기는 약 2GB까지입니다. 80분짜리 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 2시간이 넘으면 메모리가 모자랄 수 있습니다. 전사가 한 구간에서 멈추면 그 30초를 건너뛰고 이어가며, 건너뛴 구간은 경고로 알려 드립니다.</p></details>
   <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장이 나올 수 있습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
@@ -564,13 +566,13 @@ function send(msg,transfer,opt){
 // 전사 전체: 한 구간이 제한 시간 안에 안 끝나면(모델이 멈춤) 워커를 새로 띄우고 그 30초를 건너뛴 뒤 이어서 한다.
 // 오류가 나도 지금까지 모은 결과는 버리지 않는다.
 async function transcribe(a,model,lang,dev,sec,onSave){
-  const acc=[],skipped=[]; let next=0,stalls=0,failure=null;
+  const acc=[],skipped=[],langs={}; let next=0,stalls=0,failure=null;
   const timeoutMs=((window.__wd?+window.__wd:(dev==='webgpu'?60:300)))*1000;
   const t0=performance.now();
   for(;;){
     const copy=a.slice(Math.round(next*16000));
     try{
-      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;if(onSave)onSave({chunks:acc,skipped,next});}});
+      await send({type:'run',audio:copy,language:lang,base:next,total:sec},[copy.buffer],{timeoutMs,onChunk:m=>{for(const c of m.keep)acc.push(c);next=m.next;if(m.lang)langs[m.lang]=(langs[m.lang]||0)+1;if(onSave)onSave({chunks:acc,skipped,next});}});
       break;
     }catch(e){
       if(e.message!=='__stall__'){failure=e;break;}
@@ -581,7 +583,7 @@ async function transcribe(a,model,lang,dev,sec,onSave){
       try{ await send({type:'load',model,device:dev}); }catch(e2){failure=e2;break;}
     }
   }
-  return {chunks:acc,skipped,failure,ms:performance.now()-t0};
+  return {chunks:acc,skipped,failure,langs,ms:performance.now()-t0};
 }
 
 const MAX_BYTES=2*1024*1024*1024;
@@ -836,7 +838,8 @@ $('go').onclick=async()=>{
     const {f,w,last}=showOutcome(d,sec);
     if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
     const stat='전사 '+(d.ms/1000).toFixed(1)+'초 · 음성 '+sec.toFixed(1)+'초 · 속도 '+(sec/(d.ms/1000)).toFixed(1)+'배속 · 장치 '+dev+' · 모델 '+model;
-    lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last); log(stat); setStep(3);
+    const LN={ko:'한국어',en:'영어',ja:'일본어'}; const ls=Object.entries(d.langs||{}).sort((a,b)=>b[1]-a[1]).map(([c,n])=>(LN[c.replace('?','')]||c)+(c.endsWith('?')?'(감지 실패 대체)':'')+' '+n+'구간').join(', ');
+    lastStat=stat; $('stat').textContent='⏱️ '+stat+' · 인식 범위 0~'+mm(last)+(lang==='auto'&&ls?' · 감지된 언어: '+ls:''); log(stat); setStep(3);
     rec.chunks=d.chunks;rec.skipped=d.skipped;rec.done=true;rec.failure=d.failure?d.failure.message:null;rec.stat=stat;rec.updatedAt=Date.now();saveSession(rec);
     window.__result={text:f.txt,segs:f.segs,warn:w.join(' | '),stat,loadMs:r.ms,runMs:d.ms,sec,device:dev};
   }catch(e){ log('오류: '+e.message,true); setStep(0); window.__result={error:e.message}; }

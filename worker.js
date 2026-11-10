@@ -1,5 +1,5 @@
 // 전사 워커: 모델 로드와 추론을 메인 스레드 밖에서 처리한다.
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1';
+import { pipeline, Tensor } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1';
 
 let asr = null, loadedKey = null;
 
@@ -43,6 +43,25 @@ const DTYPES = {
   wasm:   { encoder_model: 'q8',   decoder_model_merged: 'q8' },
 };
 
+// 언어 감지: 라이브러리는 언어를 안 주면 영어로 간주하므로, 모델이 첫 토큰으로 예측하는 언어 확률을 직접 읽는다.
+// (30초 구간 하나에 대해 인코더를 한 번 더 돌리는 비용이 든다)
+async function detectLang(slice) {
+  const gc = asr.model.generation_config;
+  const f = await asr.processor(slice);
+  const out = await asr.model({
+    input_features: f.input_features,
+    decoder_input_ids: new Tensor('int64', BigInt64Array.from([BigInt(gc.decoder_start_token_id)]), [1, 1]),
+  });
+  const d = out.logits.data;
+  const langs = Object.entries(gc.lang_to_id).map(([k, v]) => [k.slice(2, -2), Number(v)]);
+  let mx = -Infinity; for (const [, id] of langs) if (d[id] > mx) mx = d[id];
+  let z = 0, best = null, bp = 0;
+  const ps = langs.map(([c, id]) => { const e = Math.exp(d[id] - mx); z += e; return [c, e]; });
+  for (const [c, e] of ps) if (e > bp) { bp = e; best = c; }
+  try { out.logits.dispose && out.logits.dispose(); f.input_features.dispose && f.input_features.dispose(); } catch {}
+  return [best, bp / z];
+}
+
 self.onmessage = async (e) => {
   const m = e.data;
   const id = m.id;
@@ -69,15 +88,20 @@ self.onmessage = async (e) => {
       // 창 안의 마지막 문장은 잘렸을 수 있어, 그 앞 문장의 끝에서 다음 창을 시작한다.
       // base: 이 오디오 조각이 원본에서 시작하는 시각(초). 멈춘 구간을 건너뛰고 이어서 할 때 쓴다.
       const SR = 16000, WIN = 30 * SR, total = m.audio.length, base = m.base || 0, totalSec = m.total || (base + total / SR);
-      let pos = 0;
+      let pos = 0, lastLang = null;
       while (pos < total) {
         const slice = m.audio.subarray(pos, Math.min(pos + WIN, total));
         // 소리가 거의 없는 창(디지털 무음 수준)은 모델에 넣지 않는다. 넣으면 없는 문장을 지어낸다.
         let peak = 0;
         for (let i = 0; i < slice.length; i++) { const v = slice[i] < 0 ? -slice[i] : slice[i]; if (v > peak) peak = v; }
-        let cs = [];
+        let cs = [], used = null, prob = null;
         if (peak >= 0.002) {
-          const r = await asr(slice, { language: m.language, task: 'transcribe', return_timestamps: true });
+          let language = m.language;
+          if (language === 'auto') {
+            try { [used, prob] = await detectLang(slice); language = used; lastLang = used; }
+            catch { language = lastLang || 'en'; used = language + '?'; }   // 감지에 실패하면 직전 구간의 언어(없으면 영어)
+          } else used = language;
+          const r = await asr(slice, { language, task: 'transcribe', return_timestamps: true });
           cs = (r.chunks || []).filter(c => c.text && c.text.trim());
         }
         const isLast = pos + WIN >= total;
@@ -98,7 +122,7 @@ self.onmessage = async (e) => {
         pos += adv;
         const next = base + Math.min(pos, total) / SR;
         // 창 하나가 끝날 때마다 결과를 바로 보낸다(메인이 모으고, 멈춤 감시에도 쓴다)
-        post({ type: 'chunk', frac: Math.min(1, next / totalSec), keep: out, next });
+        post({ type: 'chunk', frac: Math.min(1, next / totalSec), keep: out, next, lang: used, langProb: prob });
       }
       post({ type: 'done', ms: performance.now() - t0 });
     }
