@@ -338,7 +338,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
       <li>🔇 소리가 없거나 끊긴 구간에서 말하지 않은 문장(예: "이 영상은")이 나올 수 있습니다.</li>
       <li>📉 base 모델은 한국어를 자주 잘못 알아듣습니다.</li>
       <li>🧪 시험한 것은 맥북 Chrome(WebGPU)에서 한국어 강의 1개(33분)와 합성 음성입니다. 같은 강의를 맥용 mlx-whisper와 비교하면 글자 기준 99.5% 일치했지만, 다른 음성에서의 정확도는 알 수 없습니다.</li>
-      <li>🍎 Safari에서는 80분 mp4가 끝까지 전사되는 것을 확인했습니다. iPhone·iPad 실기기, HE-AAC·조각난 mp4·mov 파일은 시험하지 못했습니다.</li>
+      <li>🍎 Safari(맥)에서 80분 mp4가 끝까지 전사되는 것을 확인했고, mp3·m4a·HE-AAC·조각난 mp4·.mov도 시험했습니다. iPhone·iPad 실기기와 아이폰이 직접 찍은 .MOV는 시험하지 못했습니다.</li>
       <li>🐢 같은 맥에서 mlx-whisper 앱이 이 사이트보다 약 4배 빨랐습니다.</li>
     </ul>
   </div>
@@ -627,7 +627,13 @@ async function probeMp4(file){
       const stbl=kid(d,kid(d,mdia,'minf'),'stbl'); if(!stbl)continue;
       const stsd=kid(d,stbl,'stsd'); const ent=boxes(d,stsd.s+8,stsd.e)[0];
       if(!ent||ent.type!=='mp4a')return {dur,aac:null};
-      const esds=boxes(d,ent.s+28,ent.e).find(x=>x.type==='esds'); if(!esds)return {dur,aac:null};
+      let esds=boxes(d,ent.s+28,ent.e).find(x=>x.type==='esds');
+      if(!esds){ // QuickTime(.mov)은 소리 항목이 한 겹 더 깊다(wave 상자 안). 항목 전체에서 esds 글자를 찾아 그 상자를 읽는다
+        for(let i=ent.s+8;i+8<ent.e;i++){
+          if(fourcc(d,i)==='esds'){const sz=u32(d,i-4); if(sz>=12&&i-4+sz<=ent.e){esds={s:i+4,e:i-4+sz};break;}}
+        }
+      }
+      if(!esds)return {dur,aac:null};
       // esds → ES_Descriptor(0x03) → DecoderConfig(0x04) → DecoderSpecificInfo(0x05) = AudioSpecificConfig
       let q=esds.s+4;const readLen=()=>{let n=0,c;do{c=d.getUint8(q++);n=(n<<7)|(c&0x7f);}while(c&0x80);return n;};
       let asc=null;
@@ -699,7 +705,14 @@ async function decode(file,progress){
     const buf=await file.arrayBuffer();
     const ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:16000});
     ab=await ctx.decodeAudioData(buf); ctx.close();
-  }catch{throw new Error('이 파일을 열 수 없습니다. 오디오 트랙이 없거나 손상된 파일이거나, 브라우저가 지원하지 않는 형식일 수 있습니다.');}
+  }catch{
+    // 브라우저가 파일을 못 읽어도 AAC를 직접 꺼낼 수 있으면(예: 일부 .mov) 그 방법으로 한 번 더 시도한다
+    if(info&&info.aac){
+      try{ const a=await decodeMp4Demux(file,info,progress); window.__decodeVia='demux-fallback'; return a; }
+      catch(e){ console.warn('MP4 직접 읽기도 실패:',e); }
+    }
+    throw new Error('이 파일을 열 수 없습니다. 오디오 트랙이 없거나 손상된 파일이거나, 브라우저가 지원하지 않는 형식일 수 있습니다.');
+  }
   const n=ab.length, mono=new Float32Array(n), C=ab.numberOfChannels;
   for(let c=0;c<C;c++){const d=ab.getChannelData(c);for(let i=0;i<n;i++)mono[i]+=d[i];}
   if(C>1)for(let i=0;i<n;i++)mono[i]/=C;
