@@ -183,13 +183,13 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <canvas id="wave" aria-hidden="true"></canvas>
   <div class="brandrow"><span class="bl"><svg class="logo" aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#3F51B5"/><rect x="6.8" y="23.0" width="6.4" height="18" rx="3.2" fill="#fff"/><rect x="17.8" y="16.0" width="6.4" height="32" rx="3.2" fill="#fff"/><rect x="28.8" y="10.0" width="6.4" height="44" rx="3.2" fill="#fff"/><rect x="39.8" y="18.0" width="6.4" height="28" rx="3.2" fill="#fff"/><rect x="50.8" y="25.0" width="6.4" height="14" rx="3.2" fill="#fff"/></svg><span>웹 받아쓰기</span></span>
     <a class="livebadge" id="liveBadge" href="#proof" aria-label="업로드 요청 수, 증거 보기"><i aria-hidden="true"></i><span>업로드 <b id="liveUp">0</b>건</span></a></div>
-  <h1>녹음 파일,<br><span class="grad">업로드 없이</span> 글로.</h1>
-  <p class="tag">서버로 보내지 않는데 어떻게? 브라우저 안에서 Whisper가 직접 돌아갑니다. <b>아래에서 업로드 0건을 직접 확인하세요.</b></p>
+  <h1>녹음 파일을<br><span class="grad">올리지 않고</span><br>글로 옮깁니다.</h1>
+  <p class="tag">서버로 보내지 않는데 어떻게 받아 적을까요? 브라우저 안에서 Whisper 모델이 직접 돌아갑니다. <b>업로드가 0건인 걸 아래에서 직접 확인해 보세요.</b></p>
   <div class="ctas">
     <button class="pri cta" id="heroPick">📂 파일 열고 받아 적기</button>
     <button class="linkbtn" id="heroProof">업로드 0건 확인하기 ↓</button>
   </div>
-  <p class="heronote" id="ctaNote">가입 없음 · 설치 없음 · 파일을 이 영역에 끌어다 놓아도 됩니다.</p>
+  <p class="heronote" id="ctaNote">가입도 설치도 필요 없습니다. 파일은 이 영역에 끌어다 놓아도 됩니다.</p>
   <div class="chips">
     <span class="chip ok">🔒 파일은 밖으로 보내지 않음</span>
     <span class="chip" id="devchip">⚙️ 장치 확인 중…</span>
@@ -209,7 +209,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     <input id="file" type="file" accept="audio/*,video/*" hidden>
 
     <h2><span class="num">2</span> 모델과 언어</h2>
-    <fieldset class="models" id="models"><legend class="hint">정확한 모델일수록 처음 내려받는 용량이 큽니다</legend></fieldset>
+    <fieldset class="models" id="models"><legend class="hint">모델이 클수록 더 정확하지만, 처음 내려받는 용량도 커집니다</legend></fieldset>
     <div class="row">
       <label class="f">🌐 언어<select id="lang"><option value="korean">한국어</option><option value="english">English</option><option value="japanese">日本語</option></select></label>
     </div>
@@ -222,7 +222,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     </div>
     <progress id="bar" value="0" max="100" hidden></progress>
     <div id="log" aria-live="polite"></div>
-    <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 진행 결과를 이 기기에 임시 저장 — 창을 닫아도 불러올 수 있습니다. 전사 텍스트와 파일 이름이 이 브라우저에 7일간 남고, 서버로는 보내지 않습니다.</span></label>
+    <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 전사하는 동안의 중간 결과를 이 기기에 임시로 저장합니다. 창을 잘못 닫아도 다시 불러올 수 있습니다. 파일 이름과 전사된 글이 이 브라우저에 7일간 남고, 서버로는 보내지 않습니다.</span></label>
   </section>
 
   <section class="card" aria-label="결과">
@@ -251,49 +251,49 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 
 <section class="card proof" id="proof" aria-label="네트워크 증명">
   <h2>🔍 보내지 않았다는 걸, 직접 확인하세요</h2>
-  <p class="hint">이 페이지가 열린 뒤 낸 요청이 실시간으로 쌓입니다. 파일을 올려 전사해 보고 업로드 칸이 0인지 보세요.</p>
+  <p class="hint">이 페이지가 열린 뒤로 보낸 요청이 실시간으로 쌓입니다. 파일을 골라 전사해 보면서 '업로드' 칸이 계속 0인지 확인해 보세요.</p>
   <div class="tiles">
     <div class="tile"><b id="nReq">0</b><span>전체 요청</span></div>
     <div class="tile"><b id="nHost">0</b><span>접속한 곳</span></div>
     <div class="tile ok" id="tUp"><b id="nUp">0</b><span>업로드(데이터를 보낸 요청)</span></div>
   </div>
-  <div class="tblwrap"><table><thead><tr><th>접속한 곳</th><th>무엇을 받나</th><th>요청</th><th>받은 크기</th></tr></thead><tbody id="hostTbl"></tbody></table></div>
+  <div class="tblwrap"><table><thead><tr><th>접속한 곳</th><th>용도</th><th>요청 수</th><th>받은 크기</th></tr></thead><tbody id="hostTbl"></tbody></table></div>
   <ul class="reqlog" id="reqLog" aria-label="최근 요청"></ul>
   <p class="hint">🧪 정확도: 한국어 강의 33분 1개에서 맥용 mlx-whisper 결과와 글자 기준 99.5% 일치했습니다. 다른 음성의 정확도는 확인하지 못했습니다.</p>
-  <p class="hint">⚠️ 이 숫자는 페이지 코드가 스스로 센 값이라, 코드가 바뀌면 믿을 수 없습니다. 확실히 보려면 개발자 도구의 네트워크 탭을 직접 여세요(Safari: 개발자용 메뉴 → 웹 검사기). 데이터를 보낸 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 기록해 준 것만 나오므로, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
+  <p class="hint">⚠️ 이 숫자는 페이지 코드가 직접 센 값입니다. 코드가 바뀌면 이 숫자도 믿을 수 없으니, 확실히 확인하려면 브라우저 개발자 도구의 네트워크 탭을 직접 여세요(Safari는 '개발자용' 메뉴 → '웹 검사기'). 데이터를 보내는 요청은 fetch·XHR·WebSocket·sendBeacon만 셉니다. 요청 수와 받은 크기는 브라우저가 알려 주는 만큼만 나오기 때문에, 캐시에서 읽은 파일은 빠질 수 있습니다.</p>
 </section>
 
 <section class="card why" id="why" aria-label="왜 브라우저 안에서">
-  <h2>🧭 얻는 것과 치르는 것</h2>
-  <p class="hint">맥에서 쓰던 받아쓰기 앱(SwiftUI + mlx-whisper)을 설치 없이 다른 사람도 쓰도록 브라우저로 옮긴 개인 프로젝트입니다. 서버에 올려 처리하는 방식이면 파일이 그 서버를 거칩니다. 이 사이트는 처리를 이 기기에서 하는 대신, 아래 대가를 치릅니다.</p>
+  <h2>⚖️ 이 방식의 좋은 점과 아쉬운 점</h2>
+  <p class="hint">맥에서 쓰던 받아쓰기 앱(SwiftUI + mlx-whisper)을 설치 없이 누구나 쓸 수 있게 브라우저로 옮긴 개인 프로젝트입니다. 서버에 올려 처리하는 서비스는 파일이 그 서버를 거치지만, 이 사이트는 모든 처리를 내 기기에서 합니다. 대신 아래와 같은 아쉬운 점이 있습니다.</p>
   <div class="cmp">
-    <div class="gain"><h3>✅ 얻는 것</h3><ul>
-      <li>파일이 이 기기를 떠나지 않도록 만들었습니다(위 패널에서 직접 확인).</li>
-      <li>가입도 설치도 없습니다.</li>
-      <li>같은 영상을 맥용 앱과 비교해 글자 기준 99.5% 일치했습니다(한국어 강의 33분 1개).</li>
+    <div class="gain"><h3>✅ 좋은 점</h3><ul>
+      <li>파일이 내 기기 밖으로 나가지 않도록 만들었고, 위 패널에서 직접 확인할 수 있습니다.</li>
+      <li>가입도 설치도 필요 없습니다.</li>
+      <li>같은 한국어 강의(33분)를 맥용 앱과 비교했더니 글자가 99.5% 일치했습니다. 시험한 영상은 이 1개뿐입니다.</li>
     </ul></div>
-    <div class="cost"><h3>⚠️ 치르는 것</h3><ul>
-      <li>처음에는 모델을 내려받습니다(약 0.17~1.6GB).</li>
-      <li>같은 맥에서 맥용 앱보다 약 4배 느렸습니다(5분 음성 1건 측정).</li>
-      <li>휴대폰은 확인하지 못했고, 메모리 때문에 큰 모델이 중단될 수 있습니다(추정).</li>
-      <li>코드와 모델을 받는 서비스에는 접속 정보(IP 등)가 보입니다.</li>
+    <div class="cost"><h3>⚠️ 아쉬운 점</h3><ul>
+      <li>처음 한 번 모델을 내려받아야 합니다(약 0.17~1.6GB).</li>
+      <li>같은 맥에서 맥용 앱보다 약 4배 느렸습니다(5분짜리 음성 1건으로 측정).</li>
+      <li>휴대폰에서는 아직 시험하지 못했습니다. 메모리가 모자라 큰 모델이 멈출 수도 있습니다(추정).</li>
+      <li>코드와 모델을 내려받는 서비스(jsdelivr, Hugging Face)에는 내 IP 같은 접속 정보가 보입니다.</li>
     </ul></div>
   </div>
 </section>
 
 <section class="card faq" id="faq" aria-label="자주 묻는 질문">
   <h2>❓ 자주 묻는 질문</h2>
-  <details><summary>내 파일이 서버로 올라가나요?</summary><p>올라가지 않도록 만들었습니다. 위 "네트워크 증명 패널"에서 업로드 수를 직접 확인하세요. 다만 코드는 jsdelivr에서, 모델은 Hugging Face에서 받기 때문에 그 서비스들에는 접속 정보가 보입니다.</p></details>
-  <details><summary>처음에 왜 오래 걸리나요?</summary><p>전사 모델을 내려받기 때문입니다. WebGPU 기준으로 turbo 약 1.6GB, small 약 0.4GB, base 약 0.17GB입니다. 같은 브라우저에 저장되는 것이 일반적이지만, 이 사이트에서 다시 받지 않는지는 확인하지 못했습니다.</p></details>
-  <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 중요하면 turbo(시험한 강의 1개에서 맥용 앱과 99.5% 일치)입니다. 휴대폰이거나 용량·메모리가 걱정되면 small입니다. base는 가장 가볍지만 한국어 오인식이 많습니다.</p></details>
-  <details><summary>휴대폰에서도 되나요?</summary><p>실기기에서는 확인하지 못했습니다. 터치 기기에서는 기본 모델을 small로 고르고, 전사하는 동안 화면을 켜 두길 권합니다.</p></details>
-  <details><summary>얼마나 긴 파일까지 되나요?</summary><p>약 2GB 이하입니다. 80분 길이 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 2시간이 넘으면 메모리가 부족할 수 있고, 한 구간에서 멈추면 그 30초를 건너뛰고 이어서 하며 경고로 알려 줍니다.</p></details>
-  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>무음이거나 잘린 구간에서 없는 문장이 나올 수 있습니다. 중요한 용도라면 결과를 직접 확인하세요. 길이가 맞지 않거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
+  <details><summary>내 파일이 서버로 올라가나요?</summary><p>아니요, 올라가지 않도록 만들었습니다. 위쪽 확인 패널에서 업로드 수를 직접 볼 수 있습니다. 다만 코드는 jsdelivr에서, 모델은 Hugging Face에서 내려받기 때문에 두 곳에는 내 접속 정보(IP 등)가 보입니다.</p></details>
+  <details><summary>처음에 왜 오래 걸리나요?</summary><p>받아 적는 데 쓰는 모델 파일을 처음 한 번 내려받기 때문입니다. WebGPU 기준으로 turbo 약 1.6GB, small 약 0.4GB, base 약 0.17GB입니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다.</p></details>
+  <details><summary>어떤 모델을 골라야 하나요?</summary><p>정확도가 가장 중요하면 turbo입니다(시험한 강의 1개에서 맥용 앱과 99.5% 일치). 휴대폰이거나 용량·메모리가 걱정되면 small을 고르세요. base는 가장 가볍지만 한국어를 자주 잘못 알아듣습니다.</p></details>
+  <details><summary>휴대폰에서도 되나요?</summary><p>아직 실제 휴대폰에서는 시험하지 못했습니다. 휴대폰과 태블릿에서는 small을 기본으로 골라 두었고, 전사하는 동안 화면을 켜 두시길 권합니다.</p></details>
+  <details><summary>얼마나 긴 파일까지 되나요?</summary><p>파일 크기는 약 2GB까지입니다. 80분짜리 영상이 Chrome과 Safari에서 끝까지 전사됐습니다. 2시간이 넘으면 메모리가 모자랄 수 있습니다. 전사가 한 구간에서 멈추면 그 30초를 건너뛰고 이어가며, 건너뛴 구간은 경고로 알려 드립니다.</p></details>
+  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장이 나올 수 있습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
 </section>
 
 <section class="card cta2" id="endcta" aria-label="시작하기">
-  <h2>📂 파일 하나로 시험해 보세요</h2>
-  <p class="hint">짧은 파일과 small 모델로 먼저 해 보면 처음 내려받는 용량(약 0.4GB)을 줄일 수 있습니다.</p>
+  <h2>📂 짧은 파일로 먼저 해 보세요</h2>
+  <p class="hint">짧은 파일과 small 모델(약 0.4GB)로 시작하면 처음 내려받는 양도 적고, 결과가 어떤지 빠르게 볼 수 있습니다.</p>
   <button class="pri cta" id="endPick">📂 파일 열고 받아 적기</button>
 </section>
 
@@ -307,18 +307,18 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   </div>
   <div class="panel" id="p-how">
     <ul>
-      <li>📂 파일을 올리면 이 기기에서 소리만 꺼내 16kHz로 바꿉니다.</li>
-      <li>🧠 모델을 처음 한 번 내려받습니다. 같은 브라우저에 저장되는 것이 일반적이지만 이 사이트에서 다시 받지 않는지는 확인하지 못했습니다.</li>
+      <li>📂 파일을 고르면 이 기기에서 소리만 꺼내 16kHz로 바꿉니다.</li>
+      <li>🧠 모델은 처음 한 번 내려받습니다. 같은 브라우저에는 보관되는 게 보통이지만, 다음에 열었을 때 실제로 다시 받지 않는지는 아직 확인하지 못했습니다.</li>
       <li>🎧 30초씩 순서대로 받아 적고, 끝난 뒤 텍스트·구간·자막 형식으로 보여 줍니다.</li>
       <li>💻 GPU(WebGPU)가 있으면 빠르고, 없으면 CPU로 처리해 느립니다. 최신 Chrome·Edge를 권장합니다.</li>
     </ul>
   </div>
   <div class="panel" id="p-priv" hidden>
     <ul>
-      <li>🔒 파일 내용은 이 기기 밖으로 보내지 않도록 만들었습니다. base 모델로 전사하는 동안 요청 34건을 기록했고 업로드 요청(POST·PUT)은 0건이었습니다. turbo·small·CPU 경로는 이 방식으로 확인하지 않았습니다.</li>
-      <li>🛟 전사 도중 결과는 이 브라우저(IndexedDB)에 임시 저장됩니다. 파일 이름과 전사 텍스트가 7일간 남고, 서버로는 보내지 않습니다. 공용 컴퓨터라면 결과 위쪽의 "지우기"를 누르거나 전사 버튼 아래의 저장 옵션을 끄세요.</li>
+      <li>🔒 파일 내용은 이 기기 밖으로 보내지 않도록 만들었습니다. base 모델로 전사하는 동안 요청 34건을 세어 봤고, 그중 업로드(POST·PUT)는 0건이었습니다. turbo·small·CPU 경로는 같은 방식으로 확인하지 않았습니다.</li>
+      <li>🛟 전사하는 동안의 중간 결과는 이 브라우저(IndexedDB)에 임시로 저장됩니다. 파일 이름과 전사된 글이 7일간 남고, 서버로는 보내지 않습니다. 공용 컴퓨터라면 결과 위쪽의 "지우기"를 누르거나 전사 버튼 아래의 저장 옵션을 끄세요.</li>
       <li>🌐 처음 접속하면 전사 코드는 <code>cdn.jsdelivr.net</code>에서, 모델은 <code>huggingface.co</code>·<code>hf.co</code>에서 내려받습니다. 이 서비스들에는 IP 같은 접속 정보가 보입니다.</li>
-      <li>⚠️ 코드가 외부 CDN에서 오므로 CDN이 침해되면 위 설명이 성립하지 않을 수 있습니다. 민감한 음성은 오프라인 도구가 더 안전합니다.</li>
+      <li>⚠️ 코드를 외부 CDN에서 받기 때문에, CDN이 해킹당하면 위 설명을 보장할 수 없습니다. 민감한 음성은 오프라인 도구가 더 안전합니다.</li>
     </ul>
   </div>
   <div class="panel" id="p-size" hidden>
@@ -326,14 +326,14 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
       <tr><td>🚀 large-v3-turbo</td><td>약 1.6GB</td><td>약 1.1GB</td></tr>
       <tr><td>⚖️ small</td><td>약 0.4GB</td><td>약 0.25GB</td></tr>
       <tr><td>⚡ base</td><td>약 0.17GB</td><td>약 0.08GB</td></tr></tbody></table></div>
-    <p class="hint">Hugging Face 파일 목록 기준(2026-11-09). 휴대폰 데이터로 받을 때는 주의하세요.</p>
+    <p class="hint">Hugging Face 파일 목록 기준(2026-11-09). 휴대폰 데이터로 내려받을 때는 용량에 주의하세요.</p>
   </div>
   <div class="panel" id="p-lim" hidden>
     <ul>
-      <li>🔇 무음 구간이나 잘린 파일에서 없는 문장(예: "이 영상은")이 나올 수 있습니다.</li>
-      <li>📉 base 모델은 한국어 오인식이 많습니다.</li>
-      <li>🧪 시험한 것은 맥북 Chrome(WebGPU)에서 한국어 강의 1개(33분)와 합성 음성입니다. 같은 강의에서 맥용 mlx-whisper 결과와 글자 기준 99.5% 일치했지만, 다른 음성의 정확도는 알 수 없습니다.</li>
-      <li>🍎 Safari·휴대폰·1시간 넘는 turbo 전사는 시험하지 못했습니다.</li>
+      <li>🔇 소리가 없거나 끊긴 구간에서 말하지 않은 문장(예: "이 영상은")이 나올 수 있습니다.</li>
+      <li>📉 base 모델은 한국어를 자주 잘못 알아듣습니다.</li>
+      <li>🧪 시험한 것은 맥북 Chrome(WebGPU)에서 한국어 강의 1개(33분)와 합성 음성입니다. 같은 강의를 맥용 mlx-whisper와 비교하면 글자 기준 99.5% 일치했지만, 다른 음성에서의 정확도는 알 수 없습니다.</li>
+      <li>🍎 Safari에서는 80분 mp4가 끝까지 전사되는 것을 확인했습니다. iPhone·iPad 실기기, HE-AAC·조각난 mp4·mov 파일은 시험하지 못했습니다.</li>
       <li>🐢 같은 맥에서 mlx-whisper 앱이 이 사이트보다 약 4배 빨랐습니다.</li>
     </ul>
   </div>
@@ -347,7 +347,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 </section>
 
 <footer>
-  <div>🛠️ 개인이 만든 실험용 도구입니다. 전사 결과에는 오류가 있을 수 있으니 중요한 용도에는 직접 확인하세요.</div>
+  <div>🛠️ 개인이 만든 실험용 도구입니다. 전사 결과에는 오류가 있을 수 있으니, 중요한 용도라면 결과를 직접 확인한 뒤 쓰세요.</div>
   <div><a href="https://github.com/DeVentory/browser-whisper-transcribe" target="_blank" rel="noopener noreferrer">GitHub 저장소</a> · MIT</div>
 </footer>
 </div>
@@ -358,7 +358,7 @@ const SIZE={webgpu:{turbo:'약 1.6GB',small:'약 0.4GB',base:'약 0.17GB'},wasm:
 const MODELS=[
   {k:'turbo',em:'🚀',nm:'large-v3-turbo',ds:'가장 정확 · 시험한 강의에서 맥용 앱과 99.5% 일치'},
   {k:'small',em:'⚖️',nm:'small',ds:'중간 크기 · 정확도는 시험하지 않음'},
-  {k:'base', em:'⚡',nm:'base',ds:'가장 작고 빠름 · 한국어 오인식이 많음'},
+  {k:'base', em:'⚡',nm:'base',ds:'가장 작고 빠름 · 한국어를 자주 잘못 알아들음'},
 ];
 let device='wasm',worker=null,audio=null,fileName='',busy=false,seq=0,pending=null,results=null,curTab='txt',lastStat='';
 const log=(s,err)=>{$('log').textContent=s;$('log').classList.toggle('err',!!err)};
@@ -389,7 +389,7 @@ renderModels('small');
 const MODEL_NM={turbo:'large-v3-turbo',small:'small',base:'base'};
 function updCtaNote(){
   const k=modelValue();
-  $('ctaNote').textContent='가입 없음 · 설치 없음 · 처음엔 모델('+MODEL_NM[k]+' '+SIZE[device][k]+')을 내려받아 시간이 걸립니다. 파일을 이 영역에 끌어다 놓아도 됩니다.';
+  $('ctaNote').textContent='가입도 설치도 필요 없습니다. 처음 한 번 모델('+MODEL_NM[k]+' '+SIZE[device][k]+')을 내려받느라 시간이 걸립니다. 파일은 이 영역에 끌어다 놓아도 됩니다.';
 }
 $('models').addEventListener('change',updCtaNote);
 // 휴대폰·태블릿(터치 기기)은 탭 메모리 한도가 낮아 turbo(약 1.6GB)가 강제 종료될 수 있다(추정, 실기기 미확인).
@@ -401,7 +401,7 @@ pickDevice().then(d=>{
   const ok=d==='webgpu';
   $('devchip').textContent=ok?'⚡ GPU(WebGPU)로 처리':'🐢 CPU(WASM)로 처리';
   $('devchip').className='chip '+(ok?'ok':'bad');
-  $('env').textContent=!ok?'이 브라우저·기기에서는 WebGPU(fp16)를 쓸 수 없어 CPU로 처리합니다. small이나 base를 권장합니다.':(mobile?'휴대폰·태블릿은 메모리 한도가 낮아 큰 모델(turbo)이 중단될 수 있어 small을 기본으로 골랐습니다. 전사하는 동안 화면을 켜 두세요.':'');
+  $('env').textContent=!ok?'이 브라우저나 기기에서는 WebGPU(fp16)를 쓸 수 없어 CPU로 처리합니다. small이나 base를 권합니다.':(mobile?'휴대폰과 태블릿은 메모리가 넉넉하지 않아 큰 모델(turbo)이 멈출 수 있어 small을 기본으로 골랐습니다. 전사하는 동안에는 화면을 켜 두세요.':'');
   if(window.__autoStart)window.__autoStart();
 });
 
@@ -683,7 +683,7 @@ async function decodeMp4Demux(file,info,progress){
 
 const isWebKit=/AppleWebKit/.test(navigator.userAgent)&&!/Chrome\/|Chromium\//.test(navigator.userAgent);
 async function decode(file,progress){
-  if(file.size>MAX_BYTES)throw new Error('파일이 너무 큽니다(약 2GB 한도). 오디오만 추출하거나 나눠서 올려 주세요.');
+  if(file.size>MAX_BYTES)throw new Error('파일이 너무 큽니다(약 2GB까지). 오디오만 뽑아내거나 나눈 뒤 다시 골라 주세요.');
   const info=await probeMp4(file); window.__mp4=info?{dur:info.dur,aac:!!info.aac}:null;
   // Safari 계열은 MP4를 통째로 decodeAudioData에 넣으면 중간에 잘리므로 처음부터 직접 읽는다
   if(info&&info.aac&&isWebKit){
@@ -724,12 +724,12 @@ async function setFile(f){
     let peak=0;for(let i=0;i<a.length;i++){const v=Math.abs(a[i]);if(v>peak)peak=v;}
     const sec=a.length/16000;
     if(sec<0.5){$('fname').textContent=f.name+' · 너무 짧습니다('+sec.toFixed(2)+'초). 파일이 잘렸는지 확인하세요.';return;}
-    if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 전사하면 없는 문장이 나올 수 있어 막았습니다.';return;}
+    if(peak<0.003){$('fname').textContent=f.name+' · 소리가 거의 없는 파일입니다. 이런 파일은 없는 문장이 만들어질 수 있어 전사하지 않았습니다.';return;}
     audio=a; $('go').disabled=false; heroWave(a);
     const md=(window.__mp4&&window.__mp4.dur)||await metaDuration(f);
     const cut=md&&md-sec>30&&sec<md*0.95;
     window.__decoded={sec,meta:md};
-    $('fname').textContent=(cut?'⚠️ 파일 길이는 '+mm(md)+'인데 소리는 '+mm(sec)+'까지만 읽혔습니다. 뒷부분은 전사되지 않습니다. 다른 형식(mp3·wav)으로 변환해 올려 보세요. · ':'')+'✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
+    $('fname').textContent=(cut?'⚠️ 파일 길이는 '+mm(md)+'인데 소리는 '+mm(sec)+'까지만 읽혔습니다. 뒷부분은 전사되지 않습니다. 다른 형식(mp3·wav)으로 바꿔서 다시 골라 보세요. · ':'')+'✅ '+f.name+' · '+(sec>=60?(sec/60).toFixed(1)+'분':sec.toFixed(1)+'초')+(sec>7200?' · 2시간이 넘으면 메모리가 부족할 수 있습니다':'');
     window.__audioReady=true;
     if(window.__fromHero){window.__fromHero=false;goTool();}
   }catch(e){ $('fname').textContent=e.message; }
@@ -800,9 +800,9 @@ function showOutcome(d,sec,opt){
     if(opt.note)w.push(opt.note);
     if(d.skipped.length)w.push('⏳ 모델이 멈춰서 건너뛴 구간 '+d.skipped.length+'곳: '+d.skipped.slice(0,6).map(x=>mm(x[0])+'~'+mm(x[1])).join(', ')+(d.skipped.length>6?' 외 '+(d.skipped.length-6)+'곳':'')+'. 해당 부분의 말은 결과에 없습니다.');
     if(d.failure)w.push('⚠️ 오류로 '+mm(d.chunks.length?d.chunks[d.chunks.length-1].timestamp[1]:0)+' 부근에서 중단되어 지금까지의 결과만 보여 드립니다. ('+d.failure.message+')');
-    if(f.removed)w.push('🧹 같은 문장이 4번 이상 반복되는 구간 '+f.runs+'곳('+f.removed+'줄)을 환각으로 보고 결과에서 뺐습니다. 무음이나 잡음 구간에서 모델이 없는 문장을 만들어 낸 것입니다.');
+    if(f.removed)w.push('🧹 같은 문장이 4번 이상 이어지는 구간 '+f.runs+'곳('+f.removed+'줄)은 모델이 소리 없는 부분에서 지어낸 문장으로 보고 결과에서 뺐습니다.');
     const segs=f.segs; const last=segs.length?segs[segs.length-1].e:0;
-    if(!opt.partial&&sec-last>60)w.push('⚠️ '+mm(last)+' 이후부터 끝('+mm(sec)+')까지는 인식된 말이 없습니다. 소리가 작거나 무음·음악이거나 모델이 놓쳤을 수 있습니다. 해당 구간을 따로 잘라 다시 시도해 보세요.');
+    if(!opt.partial&&sec-last>60)w.push('⚠️ '+mm(last)+' 이후부터 끝('+mm(sec)+')까지는 인식된 말이 없습니다. 소리가 작거나, 말 없이 음악만 나오거나, 모델이 놓쳤을 수 있습니다. 그 부분만 잘라서 다시 전사해 보세요.');
     let prev=0,miss=[];
     for(const sg of segs){if(sg.s-prev>180)miss.push([prev,sg.s]);prev=Math.max(prev,sg.e);}
     if(miss.length)w.push('ℹ️ 3분 넘게 말이 인식되지 않은 구간: '+miss.slice(0,5).map(m=>mm(m[0])+'~'+mm(m[1])).join(', ')+(miss.length>5?' 외 '+(miss.length-5)+'곳':''));
