@@ -89,6 +89,11 @@ progress{width:100%;height:8px;accent-color:var(--pri)}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:260px;text-align:center;color:var(--muted);border-radius:var(--r-md);background:var(--surface2);padding:24px}
 .empty .big{font-size:40px}
 .stat{font-size:13px;color:var(--muted)}
+.aibox button{align-self:flex-start}
+.aibox{border-top:1px solid var(--outline);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.aibox p{margin:0;font-size:13px;color:var(--muted)}
+.aibox details summary{font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;min-height:32px;display:flex;align-items:center}
+.aibox pre{margin:0;white-space:pre-wrap;word-break:keep-all;overflow-wrap:break-word;font:12.5px/1.6 ui-monospace,Menlo,monospace;background:var(--surface2);padding:12px;border-radius:var(--r-sm);-webkit-user-select:text;user-select:text}
 .warnline{background:var(--warn-c);color:var(--on-warn);padding:10px 12px;border-radius:var(--r-sm);line-height:1.6}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -272,6 +277,11 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
       <div class="actions"><button class="pri" id="save">💾 저장</button><button id="copy">📋 복사</button></div>
       <div class="stat" id="stat"></div>
       <div class="stat warnline" id="warn" hidden></div>
+      <div class="aibox">
+        <button id="aiCopy">🤖 AI로 다듬기용 복사</button>
+        <p>잘못 알아들은 단어를 고치고 싶을 때 씁니다. 고치는 규칙(지시문)과 전사 결과를 함께 복사하니, ChatGPT·Claude 같은 AI 채팅에 붙여넣으세요. <b>붙여넣는 순간 그 서비스로 전송</b>되니 민감한 내용이면 주의하세요.</p>
+        <details><summary>지시문 보기</summary><pre id="aiPrompt"></pre></details>
+      </div>
     </div>
   </section>
 </div>
@@ -321,7 +331,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <details><summary>여러 언어가 섞여 있으면 어떻게 하나요?</summary><p>언어 칸에서 '자동 감지'를 고르세요. 30초 구간마다 말하는 언어를 알아내 그 언어로 받아 적고, 감지된 언어를 결과 아래에 보여 줍니다. 한 구간 안에서 언어가 번갈아 나오면 더 많이 쓰인 쪽 하나로 정해져서, 다른 언어 부분은 틀리게 적힐 수 있습니다. 언어를 알아내는 단계가 더해지는 만큼 조금 더 걸립니다.</p></details>
   <details><summary>휴대폰에서도 되나요?</summary><p>휴대폰은 메모리가 넉넉하지 않아 큰 모델(turbo)이 중간에 멈출 수 있어서, 휴대폰과 태블릿에서는 small을 기본으로 골라 둡니다. 전사하는 동안에는 화면을 켜 두세요. 아이폰·아이패드에서는 아직 직접 확인하지 못했습니다.</p></details>
   <details><summary>얼마나 긴 파일까지 되나요?</summary><p>파일은 약 2GB까지 열 수 있고, 1시간이 넘는 강의도 끝까지 받아 적습니다. 2시간이 넘으면 메모리가 모자랄 수 있습니다. 한 구간에서 모델이 멈추면 그 30초를 건너뛰고 이어가며, 건너뛴 구간은 결과 아래에 알려 드립니다.</p></details>
-  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장(예: "이 영상은")이 나올 수 있고, base 모델은 한국어를 자주 잘못 알아듣습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다.</p></details>
+  <details><summary>결과가 틀리면 어떻게 하나요?</summary><p>조용하거나 끊긴 구간에서는 말하지 않은 문장(예: "이 영상은")이 나올 수 있고, base 모델은 한국어를 자주 잘못 알아듣습니다. 중요한 용도라면 결과를 직접 확인하세요. 전사된 길이가 파일보다 짧거나 건너뛴 구간이 있으면 결과 아래에 경고가 뜹니다. 잘못 알아들은 단어는 결과 아래의 "🤖 AI로 다듬기용 복사"로 고칠 수 있습니다. 고치는 규칙과 전사 결과가 함께 복사되니 ChatGPT·Claude 같은 AI 채팅에 붙여넣으세요. 이 사이트는 아무것도 보내지 않지만, 붙여넣은 내용은 그 AI 서비스로 전송됩니다. AI도 틀릴 수 있으니 함께 받은 고친 목록을 원문과 대조해 보세요.</p></details>
   <details><summary>내 파일이 서버로 올라가나요?</summary><p>아니요, 올라가지 않도록 만들었습니다. 위쪽 "파일을 밖으로 보내지 않습니다" 칸에서 밖으로 보낸 요청 수를 직접 볼 수 있습니다. 다만 코드는 jsdelivr에서, 모델은 Hugging Face에서 내려받기 때문에 두 곳에는 내 접속 정보(IP 등)가 보입니다.</p></details>
 </section>
 
@@ -836,6 +846,37 @@ $('save').onclick=()=>{
   const u=URL.createObjectURL(new Blob([results[k]],{type:'text/plain;charset=utf-8'}));
   const a=document.createElement('a');a.href=u;a.download=(fileName||'전사')+'.'+k;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
 };
+// AI 다듬기용 복사: 이 사이트는 아무것도 보내지 않는다. 지시문과 결과를 클립보드에 담을 뿐이고, 붙여넣을지는 사용자가 정한다.
+// 원칙: 듣지 않은 말을 지어내지 않는다(빠진 구간 채우기 금지), 분명히 잘못 들은 단어만 고친다, 고친 곳을 줄 번호로 대조할 수 있게 한다.
+const AI_RULES=`아래는 음성 인식(Whisper)으로 자동 전사한 글입니다. 잘못 알아들은 단어를 문맥에 맞게 고쳐 주세요.
+
+규칙
+1. 들리지 않았거나 빠진 내용을 지어내지 마세요. 문장을 새로 넣거나, 합치거나, 요약하지 마세요.
+2. 문맥상 분명히 잘못 들은 단어만 고치세요(예: 발음이 비슷한 전문 용어, 고유명사). 확실하지 않으면 그대로 두세요.
+3. 띄어쓰기와 문장부호는 고쳐도 됩니다. 말투와 어순은 바꾸지 마세요.
+4. 원문의 언어를 그대로 쓰고, 번역하지 마세요.
+
+답변 형식
+1) 고친 전문: 줄 번호를 그대로 붙여서
+2) 고친 목록 표: 줄 번호 | 원래 | 수정 | 이유
+3) 애매해서 그대로 둔 부분
+
+주제나 자주 나오는 용어(알면 적어 주세요): 
+`;
+$('aiPrompt').textContent=AI_RULES+'\n--- 전사 결과 ---\n1| (여기에 전사된 글이 줄 번호와 함께 붙습니다)';
+$('aiCopy').onclick=async()=>{
+  if(!results||!results.segs||!results.segs.length)return;
+  const body=results.segs.map((c,i)=>(i+1)+'| '+c.t).join('\n');
+  const text=AI_RULES+'\n--- 전사 결과'+(fileName?' ('+fileName+')':'')+' ---\n'+body+'\n';
+  const b=$('aiCopy');
+  try{await navigator.clipboard.writeText(text);b.textContent='✅ 복사됨 · AI 채팅에 붙여넣으세요';}
+  catch{ // 클립보드를 못 쓰면 파일로 내려받게 한다
+    const u=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
+    const a=document.createElement('a');a.href=u;a.download=(fileName||'전사')+'_AI다듬기용.txt';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+    b.textContent='💾 클립보드를 쓸 수 없어 파일로 저장했습니다';
+  }
+  setTimeout(()=>b.textContent='🤖 AI로 다듬기용 복사',2500);
+};
 $('copy').onclick=async()=>{
   if(!results)return; const k=curTab==='seg'?'txt':curTab; const b=$('copy');
   try{await navigator.clipboard.writeText(results[k]);b.textContent='✅ 복사됨';}
@@ -874,7 +915,7 @@ function showOutcome(d,sec,opt){
     for(const sg of segs){if(sg.s-prev>180)miss.push([prev,sg.s]);prev=Math.max(prev,sg.e);}
     if(miss.length)w.push('ℹ️ 3분 넘게 말이 인식되지 않은 구간: '+miss.slice(0,5).map(m=>mm(m[0])+'~'+mm(m[1])).join(', ')+(miss.length>5?' 외 '+(miss.length-5)+'곳':''));
     $('warn').hidden=!w.length; $('warn').textContent=w.join('\n'); $('warn').style.whiteSpace='pre-line';
-    $('empty').hidden=true; $('res').hidden=false; showTab('txt');
+    $('empty').hidden=true; $('res').hidden=false; showTab('txt'); $('aiCopy').disabled=!results.segs.length;
   return {f,w,last};
 }
 
