@@ -196,13 +196,17 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 html,html *,html *::before,html *::after{cursor:url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%2232%22%20height=%2232%22%20viewBox=%220%200%2032%2032%22%3E%3Cpath%20d=%22M3%202v20l5.4-4.9%203.7%208.6%203.4-1.5-3.7-8.4h7.6z%22%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.8%22%20stroke-linejoin=%22round%22/%3E%3Cg%20fill=%22%233F51B5%22%20stroke=%22%23fff%22%20stroke-width=%221.2%22%3E%3Crect%20x=%2219.6%22%20y=%2221%22%20width=%222.6%22%20height=%225.5%22%20rx=%221.3%22/%3E%3Crect%20x=%2223.4%22%20y=%2217.5%22%20width=%222.6%22%20height=%2212%22%20rx=%221.3%22/%3E%3Crect%20x=%2227.2%22%20y=%2220.5%22%20width=%222.6%22%20height=%226.5%22%20rx=%221.3%22/%3E%3C/g%3E%3C/svg%3E") 3 2,default!important}
 /* 드래그 막기: 글자 선택과 끌기를 막는다. 결과 텍스트(#out)와 입력 칸은 복사할 수 있게 둔다. 파일을 끌어다 놓는 기능은 그대로다 */
 html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#out,#out *,#live,select,input,textarea,#proof,#proof *,#log,#warn,#stat,#fname,#env,.info,.info *,.faq details p,#recovInfo,code{-webkit-user-select:text;user-select:text}
+#out,#out *,#live,select,input,textarea,#proof,#proof *,#log,#warn,#stat,#fname,#env,.info,.info *,.faq details p,.hist .hinfo,code{-webkit-user-select:text;user-select:text}
 img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 /* 임시 저장 */
 .saveopt{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);padding:6px 0}
 .saveopt input{width:20px;height:20px;accent-color:var(--pri);flex:none;margin-top:2px}
 .recov{background:var(--pri-c);color:var(--on-pri-c);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:8px}
-.recov span{font-size:13.5px;opacity:.9;overflow-wrap:anywhere}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto}
+.hist li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);color:var(--on);border-radius:var(--r-sm);padding:8px 10px}
+.hist .hinfo{flex:1 1 200px;min-width:0;font-size:13.5px;line-height:1.5;overflow-wrap:break-word}
+.hist .hinfo small{color:var(--muted);font-size:12.5px}
+.hist button{padding:8px 14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style></head>
 <body><a class="skip" href="#tool">전사 도구로 바로 가기</a><div class="wrap"><main>
@@ -253,15 +257,15 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
     <progress id="bar" value="0" max="100" hidden></progress>
     <div id="log"></div>
     <div class="sr" id="sr" aria-live="polite"></div>
-    <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 전사하는 동안의 중간 결과를 이 기기에 임시로 저장합니다. 창을 잘못 닫아도 다시 불러올 수 있습니다. 파일 이름과 전사된 글이 이 브라우저에 7일간 남고, 서버로는 보내지 않습니다.</span></label>
+    <label class="saveopt"><input type="checkbox" id="autosave" checked><span>🛟 전사 결과를 이 기기에 저장합니다. 창을 잘못 닫아도 그때까지의 결과를 다시 불러올 수 있고, 최근 20개까지 다시 열어 내려받을 수 있습니다. 파일 이름과 전사된 글은 이 브라우저에만 남고 서버로는 보내지 않습니다. 7일이 지난 기록은 이 페이지를 다시 열 때 지웁니다.</span></label>
   </section>
 
   <section class="card" aria-label="결과">
     <h2>📄 결과</h2>
     <div class="recov" id="recov" hidden>
-      <b>💾 이 기기에 저장된 전사 기록이 있습니다</b>
-      <span id="recovInfo"></span>
-      <div class="actions"><button class="pri" id="recovOpen">결과 보기</button><button id="recovDel">🗑️ 지우기</button></div>
+      <b>💾 이 기기에 저장된 전사 기록 <span id="recovCount"></span></b>
+      <ul class="hist" id="hist" aria-label="저장된 전사 기록"></ul>
+      <div class="actions"><button id="recovClear">🗑️ 모두 지우기</button></div>
     </div>
     <div class="empty" id="empty"><span class="big" aria-hidden="true">✨</span><b>전사 결과가 여기에 나타납니다</b><span class="hint">시간 구간별 목록과 자막 파일(SRT·VTT)로도 볼 수 있습니다.<br>첫 실행에는 모델을 내려받느라 시간이 걸립니다.</span></div>
     <div id="livebox" hidden style="display:flex;flex-direction:column;gap:8px"><p class="livehd">✍️ 받아 적는 중 · 끝나면 구간·자막 형식으로도 볼 수 있습니다</p><div id="live"></div></div>
@@ -359,7 +363,7 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
   <div class="panel" role="tabpanel" tabindex="0" id="p-priv" hidden>
     <ul>
       <li>🔒 파일 내용은 이 기기 밖으로 보내지 않습니다. 위쪽 "파일을 밖으로 보내지 않습니다" 칸에서 밖으로 보낸 요청 수를 직접 볼 수 있습니다.</li>
-      <li>🛟 전사하는 동안의 중간 결과는 이 브라우저(IndexedDB)에 임시로 저장됩니다. 파일 이름과 전사된 글이 7일간 남고, 서버로는 보내지 않습니다. 공용 컴퓨터라면 결과 위쪽의 "지우기"를 누르거나 전사 버튼 아래의 저장 옵션을 끄세요.</li>
+      <li>🛟 전사 결과는 이 브라우저(IndexedDB)에 최근 20개까지 저장됩니다. 파일 이름과 전사된 글이 남고, 서버로는 보내지 않습니다. 7일이 지난 기록은 이 페이지를 다시 열 때 지웁니다. 공용 컴퓨터라면 결과 위쪽의 기록 옆 🗑️나 "모두 지우기"를 누르거나, 전사 버튼 아래의 저장 옵션을 끄세요.</li>
       <li>🌐 처음 접속하면 전사 코드는 <code>cdn.jsdelivr.net</code>에서, 모델은 <code>huggingface.co</code>·<code>hf.co</code>에서 내려받습니다. 이 서비스들에는 IP 같은 접속 정보가 보입니다.</li>
       <li>⚠️ 코드를 외부 CDN에서 받기 때문에, CDN이 해킹당하면 위 설명을 보장할 수 없습니다. 민감한 음성은 오프라인 도구가 더 안전합니다.</li>
     </ul>
@@ -964,6 +968,7 @@ $('go').onclick=async()=>{
   }
   $('bar').hidden=true;
   setBusy(false);
+  refreshHist(); // 방금 끝난(또는 중지·오류로 멈춘) 전사를 목록에 반영
 };
 // 중지: 워커를 끝내면 진행 중이던 구간은 버려지고, 그 앞까지의 결과로 마무리한다.
 // 다시 시작하면 모델을 새로 준비한다(내려받은 파일은 보통 브라우저에 남아 있다).
@@ -974,58 +979,90 @@ $('stop').onclick=()=>{
   if(pending)pending.rej(new Error('__stop__'));
 };
 
-// ── 진행 결과 임시 저장(IndexedDB)과 닫기 경고 ──
+// ── 전사 기록 저장(IndexedDB)과 닫기 경고 ──
 // 전사는 이 기기에서만 돌기 때문에 창을 닫으면 멈춘다. 대신 30초 구간이 끝날 때마다 결과를 이 브라우저에 저장해 두고,
-// 다시 열었을 때 불러올 수 있게 한다. 서버로 보내지 않으며 7일 뒤 지운다. 끄거나 직접 지울 수 있다.
-const SAVE_DAYS=7;
+// 다시 열었을 때 목록에서 골라 불러올 수 있게 한다. 전사 1번 = 항목 1개('r:'+시작 시각), 최근 SAVE_MAX개까지 둔다.
+// 서버로 보내지 않으며, 7일이 지난 항목은 페이지를 열 때 지운다. 끄거나 직접 지울 수 있다.
+// 예전 판은 'last' 키 하나에 덮어썼다. 그 값은 처음 열 때 목록 항목으로 옮긴다(스토어 구조는 같아 DB 버전은 그대로 1).
+const SAVE_DAYS=7, SAVE_MAX=20;
 let autosave=true; try{autosave=localStorage.getItem('bwt-autosave')!=='0';}catch{}
 const idb={
   open:()=>new Promise((res,rej)=>{const r=indexedDB.open('bwt-session',1);r.onupgradeneeded=()=>r.result.createObjectStore('s');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}),
   async run(mode,fn){const db=await idb.open();try{return await new Promise((res,rej)=>{const t=db.transaction('s',mode);const rq=fn(t.objectStore('s'));t.oncomplete=()=>res(rq&&rq.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);});}finally{db.close();}},
-  put:v=>idb.run('readwrite',o=>o.put(v,'last')),
-  get:()=>idb.run('readonly',o=>o.get('last')),
-  del:()=>idb.run('readwrite',o=>o.delete('last')),
+  put:(k,v)=>idb.run('readwrite',o=>o.put(v,k)),
+  del:k=>idb.run('readwrite',o=>o.delete(k)),
+  clear:()=>idb.run('readwrite',o=>o.clear()),
+  async all(){const db=await idb.open();try{return await new Promise((res,rej)=>{const t=db.transaction('s','readonly'),o=t.objectStore('s');let ks=[],vs=[];o.getAllKeys().onsuccess=e=>{ks=e.target.result;};o.getAll().onsuccess=e=>{vs=e.target.result;};t.oncomplete=()=>res(ks.map((k,i)=>[k,vs[i]]));t.onerror=()=>rej(t.error);});}finally{db.close();}},
 };
+const recKey=r=>'r:'+(r.startedAt||r.updatedAt);
+// 모든 쓰기는 saveChain 한 줄로 순서대로 처리한다(구간 저장·지우기·정리가 섞이지 않게)
 let saveChain=Promise.resolve();
+const queue=f=>(saveChain=saveChain.then(f).catch(()=>{}));
 function saveSession(rec){
   if(!autosave)return;
   const snap={...rec,chunks:rec.chunks.slice(),skipped:rec.skipped.slice()};
-  saveChain=saveChain.then(()=>idb.put(snap)).catch(()=>{});
+  queue(()=>idb.put(recKey(snap),snap));
 }
-let recovRec=null;
-function showRecov(rec){
-  recovRec=rec;
-  $('recovInfo').textContent=rec.name+' · '+(rec.done?'완료된 기록':'중단된 기록('+mm(rec.next)+' / '+mm(rec.sec)+' 부근까지)')+' · 저장 '+new Date(rec.updatedAt).toLocaleString('ko-KR');
-  $('recov').hidden=false;
+// 'last' 옮기기, 7일 지난 것·깨진 것·최근 SAVE_MAX개 밖의 것 지우기. 최근 것부터 [키, 기록] 목록을 돌려준다.
+async function tidy(){
+  const rows=await idb.all(), now=Date.now(), ops=[], keep=new Map();
+  for(const [k,r] of rows){
+    if(!r||r.v!==1||!r.updatedAt||now-r.updatedAt>SAVE_DAYS*864e5){ops.push(o=>o.delete(k));continue;}
+    let key=k;
+    if(k==='last'){key=recKey(r);ops.push(o=>o.delete('last'),o=>o.put(r,key));}
+    const had=keep.get(key); if(!had||had.updatedAt<r.updatedAt)keep.set(key,r);
+  }
+  const list=[...keep].sort((x,y)=>y[1].updatedAt-x[1].updatedAt);
+  for(const [k] of list.slice(SAVE_MAX))ops.push(o=>o.delete(k));
+  if(ops.length)await idb.run('readwrite',o=>{for(const f of ops)f(o);});
+  return list.slice(0,SAVE_MAX);
 }
-async function checkRecovery(){
-  try{
-    const rec=await idb.get(); if(!rec||rec.v!==1||!rec.updatedAt)return;
-    if(Date.now()-rec.updatedAt>SAVE_DAYS*864e5){await idb.del();return;}
-    showRecov(rec);
-  }catch{}
+const refreshHist=()=>queue(()=>tidy().then(renderHist));
+function recState(r){
+  if(r.done)return '✅ 완료 · '+mm(r.sec);
+  return (r.stopped?'⏹ 중지한 기록':'⚠️ 중단된 기록')+' · '+mm(r.next)+' / '+mm(r.sec)+' 부근까지';
 }
-$('recovOpen').onclick=()=>{
-  if(busy||!recovRec)return; const r=recovRec;
+function renderHist(list){
+  const ul=$('hist'); ul.textContent='';
+  for(const [k,r] of list){
+    const li=document.createElement('li');
+    const info=document.createElement('span'); info.className='hinfo';
+    const nm=document.createElement('b'); nm.textContent=r.name;
+    const sub=document.createElement('small'); sub.textContent=recState(r)+' · '+new Date(r.updatedAt).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+(r.model?' · '+r.model:'');
+    info.append(nm,document.createElement('br'),sub);
+    const op=document.createElement('button'); op.className='pri'; op.textContent='결과 보기'; op.onclick=()=>openRec(r);
+    const del=document.createElement('button'); del.textContent='🗑️'; del.title='이 기록 지우기'; del.setAttribute('aria-label',r.name+' 기록 지우기');
+    del.onclick=()=>{li.remove(); queue(()=>idb.del(k)); refreshHist();};
+    li.append(info,op,del); ul.append(li);
+  }
+  $('recovCount').textContent=list.length?'('+list.length+'개)':'';
+  $('recov').hidden=!list.length||busy;
+}
+function openRec(r){
+  if(busy)return;
   fileName=r.name.replace(/\.[^.]+$/,'');
   const when=new Date(r.updatedAt).toLocaleString('ko-KR');
   showOutcome({chunks:r.chunks,skipped:r.skipped,failure:r.failure?new Error(r.failure):null},r.sec,
     {partial:!r.done,note:'💾 이 기기에 저장된 기록을 불러왔습니다('+r.name+', '+when+').'+(r.done?'':(r.stopped?' 중지한 기록이라 ':' 창이 닫히거나 새로고침되어 전사가 중단된 기록이라 ')+mm(r.next)+' 부근까지만 있습니다. 나머지는 같은 파일로 다시 전사해야 합니다.')});
   $('stat').textContent='⏱️ '+(r.stat||'중단된 기록')+' · 저장된 기록'; setStep(0);
-  if(matchMedia('(max-width:860px)').matches)$('res').scrollIntoView({behavior:'smooth',block:'start'});
-};
-$('recovDel').onclick=async()=>{
-  saveChain=saveChain.then(()=>idb.del()).catch(()=>{}); await saveChain;
-  $('recov').hidden=true; recovRec=null;
+  $('res').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});
+}
+// 모두 지우기는 실수 방지로 두 번 누르게 한다(브라우저 확인 창은 쓰지 않는다)
+let clearArm=0;
+$('recovClear').onclick=()=>{
+  const btn=$('recovClear');
+  if(Date.now()-clearArm>4000){clearArm=Date.now(); btn.textContent='⚠️ 한 번 더 누르면 모두 지웁니다'; setTimeout(()=>{if(Date.now()-clearArm>=4000)btn.textContent='🗑️ 모두 지우기';},4100); return;}
+  clearArm=0; btn.textContent='🗑️ 모두 지우기';
+  queue(()=>idb.clear()); queue(()=>renderHist([]));
 };
 $('autosave').checked=autosave;
 $('autosave').onchange=e=>{
   autosave=e.target.checked; try{localStorage.setItem('bwt-autosave',autosave?'1':'0');}catch{}
-  if(!autosave){saveChain=saveChain.then(()=>idb.del()).catch(()=>{});$('recov').hidden=true;recovRec=null;}
+  if(!autosave){queue(()=>idb.clear());queue(()=>renderHist([]));}
 };
 // 전사 중에 창을 닫거나 새로고침하려 하면 확인을 받는다(문구는 브라우저가 정한다. 휴대폰에서는 안 뜰 수 있다)
 window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue='';}});
-checkRecovery();
+refreshHist();
 
 // 시험용: localhost에서만, test/ 아래 같은 출처 파일만 자동 실행한다(?auto=test/ref.wav&model=base)
 const q=new URLSearchParams(location.search), auto=q.get('auto');
