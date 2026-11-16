@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko"><head><meta charset="utf-8"><script>try{const t=localStorage.getItem('bwt-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch{}</script><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
@@ -12,11 +12,15 @@
 :root{
   --bg:#f4f5fb;--surface:#ffffff;--surface2:#eceef8;--on:#1a1c24;--muted:#596070;--outline:#d6d9e6;
   --pri:#3F51B5;--on-pri:#ffffff;--pri-c:#dfe3ff;--on-pri-c:#0e1a63;--ok:#146f53;--ok-c:#d3f2e6;--bad:#b3261e;--bad-c:#fde4e1;--warn-c:#fff1cc;--on-warn:#5c4300;
-  --r-lg:24px;--r-md:16px;--r-sm:12px;
+  --r-lg:24px;--r-md:16px;--r-sm:12px;color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
+/* 화면 모드: 기본은 시스템 설정을 따르고, 머리글 버튼으로 라이트·다크를 고정할 수 있다(data-theme) */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#12131a;--surface:#1b1d27;--surface2:#262938;--on:#e5e7f2;--muted:#a1a7bb;--outline:#363a4d;
   --pri:#b7c4ff;--on-pri:#0e1a63;--pri-c:#2d3a8a;--on-pri-c:#dfe3ff;--ok:#6fd8b0;--ok-c:#12392c;--bad:#ffb4ab;--bad-c:#5a1f1a;--warn-c:#4a3a0a;--on-warn:#ffe49a;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12131a;--surface:#1b1d27;--surface2:#262938;--on:#e5e7f2;--muted:#a1a7bb;--outline:#363a4d;
+  --pri:#b7c4ff;--on-pri:#0e1a63;--pri-c:#2d3a8a;--on-pri-c:#dfe3ff;--ok:#6fd8b0;--ok-c:#12392c;--bad:#ffb4ab;--bad-c:#5a1f1a;--warn-c:#4a3a0a;--on-warn:#ffe49a;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{scroll-behavior:smooth}
@@ -119,6 +123,12 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 #wave{position:absolute;left:0;right:0;bottom:0;width:100%;height:150px;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(to top,#000 45%,transparent);mask-image:linear-gradient(to top,#000 45%,transparent)}
 .brandrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800;letter-spacing:-.01em;width:100%}
 .brandrow .bl{display:flex;align-items:center;gap:10px}
+.brright{display:flex;align-items:center;gap:8px}
+.themebtn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface2);color:var(--muted);font-size:12px;font-weight:600;white-space:nowrap}
+.bl>span{white-space:nowrap}
+@media (max-width:400px){.themebtn .tl{display:none}.brright{gap:6px}}
+/* 아주 좁은 화면(350px 이하)은 사이트 이름 글자를 화면에서만 숨긴다(화면 읽기 프로그램에는 남김) */
+@media (max-width:350px){.bl>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
 .livebadge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--surface2);color:var(--muted);font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
 .privline{margin:0;font-size:13px;color:var(--muted)}
 .privline a{font-weight:700}
@@ -166,9 +176,9 @@ code{font:12.5px ui-monospace,Menlo,monospace;background:var(--surface2);padding
 @media (max-width:560px){.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%}.tabs::-webkit-scrollbar{display:none}[role=tab]{flex:none;white-space:nowrap}}
 /* 모바일: 터치 영역 44px 이상, 입력 칸 글자 16px(iOS 확대 방지) */
 @media (pointer:coarse),(max-width:560px){
-  button,[role=tab],.livebadge,summary{min-height:44px}
+  button,[role=tab],.livebadge,.themebtn,summary{min-height:44px}
   [role=tab]{padding:0 16px}
-  .livebadge{padding:0 16px}
+  .livebadge,.themebtn{padding:0 16px}
   select{font-size:16px;height:44px;padding:0 12px}
   footer a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
   .privline a{display:inline-flex;align-items:center;min-height:44px;padding:0 4px}
@@ -214,8 +224,8 @@ img,svg,canvas,a,button{-webkit-user-drag:none;user-drag:none}
 <section class="hero" id="hero" aria-label="소개">
   <canvas id="wave" aria-hidden="true"></canvas>
   <div class="brandrow"><span class="bl"><svg class="logo" aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#3F51B5"/><rect x="6.8" y="23.0" width="6.4" height="18" rx="3.2" fill="#fff"/><rect x="17.8" y="16.0" width="6.4" height="32" rx="3.2" fill="#fff"/><rect x="28.8" y="10.0" width="6.4" height="44" rx="3.2" fill="#fff"/><rect x="39.8" y="18.0" width="6.4" height="28" rx="3.2" fill="#fff"/><rect x="50.8" y="25.0" width="6.4" height="14" rx="3.2" fill="#fff"/></svg><span>웹 받아쓰기</span></span>
-    <a class="livebadge" id="liveBadge" href="#proof" aria-label="밖으로 보낸 요청 수, 확인하러 가기"><i aria-hidden="true"></i><span>업로드 <b id="liveUp">0</b>건</span></a></div>
-  <h1>녹음 파일을<br><span class="grad">글로 받아 적습니다.</span></h1>
+    <span class="brright"><button type="button" class="themebtn" id="themeBtn"></button><a class="livebadge" id="liveBadge" href="#proof" aria-label="밖으로 보낸 요청 수, 확인하러 가기"><i aria-hidden="true"></i><span>업로드 <b id="liveUp">0</b>건</span></a></span></div>
+  <h1>녹음 파일을<br><span class="grad">글로 받아 적습니다</span></h1>
   <p class="tag">파일을 끌어다 놓으면 시간 구간별 글과 자막(SRT·VTT)이 나옵니다. <b>한국어·영어·일본어</b>를 고를 수 있고, 가입이나 설치 없이 바로 쓸 수 있습니다.</p>
   <div class="ctas">
     <button class="pri cta" id="heroPick">📂 파일 열고 받아 적기</button>
@@ -543,6 +553,18 @@ function drawWave(now){
   }
   wx.globalAlpha=1;
 }
+// 화면 모드 버튼: 자동(시스템 설정) → 라이트 → 다크 순서로 바뀐다. 고른 값은 이 브라우저에만 저장한다.
+const THEMES={auto:['🌗','자동'],light:['☀️','라이트'],dark:['🌙','다크']};
+function setTheme(t,save){
+  if(t==='auto')delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme=t;
+  if(save){try{t==='auto'?localStorage.removeItem('bwt-theme'):localStorage.setItem('bwt-theme',t);}catch{}}
+  const [ic,lb]=THEMES[t]; const b=$('themeBtn');
+  b.innerHTML='<span aria-hidden="true">'+ic+'</span><span class="tl">'+lb+'</span>';
+  b.setAttribute('aria-label','화면 모드: '+(t==='auto'?'시스템 설정 따름':lb)+'. 눌러서 바꾸기');
+  requestAnimationFrame(t=>drawWave(t)); // 움직임 줄이기 설정이면 파형이 멈춰 있으므로 새 색으로 다시 그린다
+}
+setTheme(document.documentElement.dataset.theme||'auto',false);
+$('themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||'auto';setTheme(c==='auto'?'light':c==='light'?'dark':'auto',true);};
 let waveRaf=0;
 const waveOn=()=>heroVisible&&!document.hidden;
 function loop(now){waveRaf=0;drawWave(now);if(waveOn())waveRaf=requestAnimationFrame(loop);}
