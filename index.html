@@ -30,7 +30,7 @@ body{margin:0;background:var(--bg);color:var(--on);word-break:keep-all;overflow-
 main{display:flex;flex-direction:column;gap:20px;min-width:0}
 .skip{position:absolute;left:16px;top:-80px;z-index:10;background:var(--pri);color:var(--on-pri);padding:12px 18px;border-radius:999px;font-weight:700;text-decoration:none}
 .skip:focus{top:12px;outline:3px solid var(--on);outline-offset:2px}
-#tool:focus{outline:none}
+#tool:focus,#proof:focus{outline:none}
 header{padding:36px 0 4px;display:flex;flex-direction:column;gap:14px}
 .brand{display:flex;align-items:center;gap:14px}
 .logo{width:52px;height:52px;border-radius:18px;background:var(--pri-c);color:var(--on-pri-c);display:grid;place-items:center;font-size:28px;flex:none}
@@ -574,6 +574,17 @@ document.addEventListener('visibilitychange',kickWave);
 if(reduceMotion)setInterval(()=>{if(waveOn())drawWave(0)},500);
 try{new IntersectionObserver(es=>{heroVisible=es[0].isIntersecting;kickWave();}).observe($('hero'));}catch{}
 
+// 페이지 안 링크(#tool·#proof)를 눌러도 주소 뒤에 #이 붙지 않게: 기본 이동을 막고 직접 스크롤
+addEventListener('load',()=>{if(location.hash)history.replaceState(null,'',location.pathname+location.search);});
+document.addEventListener('click',e=>{
+  if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+  const a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;
+  const t=document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));if(!t)return;
+  e.preventDefault();
+  t.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+  if(!t.hasAttribute('tabindex'))t.setAttribute('tabindex','-1');
+  t.focus({preventScroll:true});
+});
 // 히어로 버튼·끌어다 놓기
 const goTool=()=>{if(audio)$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});};
 const scrollTool=()=>$('tool').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
